@@ -1,0 +1,11 @@
+# Task ID: 6
+# Title: Create Strategy Composer
+# Status: pending
+# Dependencies: 4
+# Priority: medium
+# Description: Implement the strategy composer for marketing plans.
+# Details:
+Develop a feature to generate marketing strategies using GPT-4o or Claude. Include channels, messaging pillars, campaign timelines, and budget breakdowns. Allow export of strategies in copy-pasteable or exportable formats.
+
+# Test Strategy:
+Validate the strategy composer by generating strategies for different scenarios and ensuring the outputs are comprehensive and exportable.

@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: Configure Supabase
+# Status: pending
+# Dependencies: 1
+# Priority: medium
+# Description: Set up Supabase for authentication, database, and storage.
+# Details:
+Create a Supabase project. Configure authentication with email/password, OAuth, and magic links. Set up the PostgreSQL database schema for storing user data, funnels, and assets. Enable Supabase Storage for handling images and user files. Configure Supabase Realtime for collaboration and analytics.
+
+# Test Strategy:
+Test authentication flows, database connections, and storage access to ensure Supabase is configured correctly.

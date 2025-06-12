@@ -1,0 +1,264 @@
+Absolutely, Yair — here is the full rewritten PRD for Vibler, fully aligned with:
+	•	Supabase for auth + database
+	•	A playful, ultra-modern tone
+	•	Your color palette (egg-white, dark blue, pink)
+	•	A modular, scalable, and developer-friendly architecture
+	•	Cursor + solo-dev-ready mindset
+
+⸻
+
+🪩 Vibler — Full Product Requirements Document (PRD)
+
+“One prompt. Infinite funnels. Zero friction.”
+
+⸻
+
+1. 🎯 Overview
+
+Vibler is your AI-powered co-pilot for building complete marketing funnels using just a prompt. From customer research to creatives, from user flow to KPIs — Vibler automates the entire marketing planning and execution layer with LLMs, image generation, and data-backed projections.
+
+Imagine if AdCreative.ai, Jasper, and Figma for Funnels had a baby — and it was raised by a vibe-coder.
+
+⸻
+
+2. 👥 Target Audience
+	•	Solopreneurs & Indie Hackers – want to launch faster, without a team
+	•	Growth Marketers & Demand Gen Teams – need strategy + execution
+	•	Agencies – managing multiple client funnels, fast iterations
+	•	SaaS Startups – building scalable GTM systems
+	•	eCommerce Brands – want optimized ad funnels & visuals
+
+⸻
+
+3. 🧠 Core Features
+
+3.1 Prompt-to-Funnel Engine
+
+Users type something like:
+
+“I’m launching a task planner for ADHD solopreneurs, looking to grow email list and convert to subscriptions.”
+
+And get:
+	•	🎯 ICP with full persona insights
+	•	🧩 Strategy: channels, budget, hooks
+	•	🎨 Creatives: ad copy, images, emails
+	•	🕸️ Funnel flow: mapped steps
+	•	📊 KPIs + ROI projection
+
+⸻
+
+3.2 ICP Generator
+	•	Outputs: name, title, bio, goals, pain points, buying behavior
+	•	Editable: user can tweak persona after AI draft
+	•	Multiple personas per project
+	•	Saved to workspace for reuse
+
+⸻
+
+3.3 Strategy Composer
+	•	Channels: Email, SEO, Meta Ads, LinkedIn, UGC
+	•	Messaging pillars by persona
+	•	Suggested campaign timeline
+	•	Budget breakdown + high/low ROI routes
+	•	Outputs in copy-pasteable sections or exportable formats
+
+⸻
+
+3.4 Creative Generator
+
+Copy:
+	•	Ad copy for Meta, Google, TikTok
+	•	Landing page H1/H2
+	•	Email sequences
+	•	CTAs and value props
+
+Visuals:
+	•	DALL·E 3 or SDXL-generated ad creatives
+	•	Brand-aligned colors, logos, templates
+	•	Editable gallery with version history
+
+⸻
+
+3.5 Funnel Mapper
+	•	Drag-and-drop visual builder
+	•	Connect steps: Ad → Landing Page → Email → Demo → Sale
+	•	Auto-link creatives and KPIs to each step
+	•	Export flow to image/PDF
+
+⸻
+
+3.6 Analytics & KPI Dashboard
+	•	Auto-estimates:
+	•	CAC
+	•	CPL
+	•	Conversion rate
+	•	Retention
+	•	ROI
+	•	Editable benchmarks
+	•	Visual ROI simulation tools
+
+⸻
+
+3.7 Team Collaboration
+	•	Invite teammates
+	•	Assign roles (Admin, Editor, Viewer)
+	•	Comment system on each funnel
+	•	Shared asset library
+
+⸻
+
+4. 🎨 Style Guide
+
+Color Palette
+
+Element	Color	HEX
+Background	Egg White	#FFFAF0
+Primary Text	Dark Blue	#0B0E3F
+Accent	Pink	#FF4DA6
+Secondary	Slate	#5B5F74
+CTA Success	Mint	#3CE9A4
+
+
+⸻
+
+Typography
+	•	Headings: Satoshi or Space Grotesk – modern, geometric
+	•	Body: Inter or Open Sans – clean and readable
+	•	Buttons: All caps, bold, dark background / pink hover
+
+⸻
+
+UI Elements
+	•	Buttons: Rounded, shadowed, glowing on hover
+	•	Cards: Soft border, pink accent line on top
+	•	Modals: Blurred backdrop, animation in/out
+	•	Inputs: Floating labels, pink cursor highlight
+
+⸻
+
+Iconography
+	•	Flat outlined icons (Phosphor or Tabler Icons)
+	•	Interactive animations on hover
+	•	Use playful metaphors (sparkles = creative boost, lightning = instant funnel)
+
+⸻
+
+Imagery
+	•	AI-generated or vector-style
+	•	Reflect themes: speed, clarity, creativity
+	•	Light UI with bold creative overlays (ads, personas, flows)
+
+⸻
+
+5. 🧭 Sitemap
+
+/             → Landing page
+/login        → Login
+/signup       → Signup
+/dashboard    → Overview of funnels
+/new          → Funnel prompt input
+/icp          → ICP editor
+/strategy     → Marketing plan
+/creatives    → Copy + image generation
+/funnel       → Visual flow editor
+/analytics    → KPIs & ROI
+/team         → Manage members
+/settings     → Account + billing
+
+
+⸻
+
+6. ⚙️ Tech Stack
+
+Layer	Stack
+Frontend	Next.js + Tailwind CSS
+Backend	Supabase Edge Functions (Node.js)
+Database	Supabase PostgreSQL
+Auth	Supabase Auth (email/password, OAuth, magic links)
+Storage	Supabase Storage (images, user files)
+Realtime	Supabase Realtime (for collab + analytics)
+AI	GPT-4o for text / strategy, DALL·E 3 or SDXL for visuals
+Hosting	Vercel (frontend), Supabase (backend)
+Monitoring	Sentry, Supabase logs
+Payments	Stripe (via Supabase functions or LemonSqueezy)
+
+
+⸻
+
+Supabase Details
+	•	🔐 Auth: Fully managed with support for role-based access via RLS
+	•	💾 DB: Relational, scalable, perfect for workspaces, funnels, and assets
+	•	📡 Realtime: Used for team edits, comment sync, live analytics
+
+⸻
+
+7. 🧠 LLM Tasks & System Prompts
+
+Task	Model	System Prompt
+ICP	GPT-4o	“You are a senior B2B marketer. Write a clear ICP for…”
+Strategy	GPT-4o / Claude	“Build a multi-step GTM plan based on this product…”
+Copywriting	GPT-4o	“Write 3 ad variations for Meta Ads that target this persona…”
+Visuals	DALL·E 3 / SDXL	“Generate ad images for a clean, modern app targeting Gen Z professionals…”
+ROI Analysis	GPT-4o-turbo	“Project ROI based on X budget and Y conversion rates…”
+
+
+⸻
+
+8. 🔐 Security & RBAC
+	•	Supabase Auth + RLS (Row Level Security)
+	•	Roles: Admin, Editor, Viewer
+	•	MFA via Supabase
+	•	Logs & audit trails
+	•	Data encryption at rest and in transit
+
+⸻
+
+9. 💸 Pricing Model
+
+🟢 Free
+	•	1 funnel/month
+	•	GPT-3.5 only
+	•	Vibler watermark
+	•	No image generation
+
+🔵 Pro – $29/mo
+	•	10 funnels/month
+	•	GPT-4o access
+	•	25 image generations
+	•	Team collab (up to 2 users)
+
+🟣 Team – $79/mo
+	•	Unlimited funnels
+	•	Unlimited image gen
+	•	Full collaboration suite
+	•	Export tools
+	•	API access
+
+🧑‍💼 Enterprise
+	•	SSO, SLAs
+	•	White-label
+	•	Dedicated onboarding
+	•	Custom AI workflows
+
+⸻
+
+10. 🚀 Roadmap
+	•	🔌 Meta + Google Ad sync
+	•	🌍 Multilingual support
+	•	📦 Zapier + Make integrations
+	•	🧑‍🎨 BrandKit generator
+	•	🔐 GPT4-Turbo with user fine-tuning
+	•	✏️ Edit-in-place for ads
+	•	🎮 Mobile app or Progressive Web App
+
+⸻
+
+🔚 Summary
+
+Vibler is not just a funnel builder. It’s your growth strategist, designer, copywriter, and data analyst — all in one playful, modern interface.
+
+Powered by Supabase. Built for vibe coders.
+Let’s launch better marketing — faster than ever.
+
+⸻
+

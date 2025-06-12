@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: Develop Prompt-to-Funnel Engine
+# Status: pending
+# Dependencies: 2, 3
+# Priority: high
+# Description: Create the core engine that generates marketing funnels from user prompts.
+# Details:
+Use GPT-4o to process user prompts and generate marketing funnel components such as ICP, strategy, creatives, funnel flow, and KPIs. Implement a backend service using Supabase Edge Functions to handle prompt processing and data storage.
+
+# Test Strategy:
+Validate the engine by inputting various prompts and verifying the generated outputs for accuracy and relevance.

@@ -1,0 +1,11 @@
+# Task ID: 10
+# Title: Implement Team Collaboration Features
+# Status: pending
+# Dependencies: 2, 3
+# Priority: medium
+# Description: Develop features for team collaboration and role management.
+# Details:
+Implement features to invite teammates, assign roles, and enable a comment system on funnels. Use Supabase Realtime for live collaboration and asset sharing.
+
+# Test Strategy:
+Test collaboration features by inviting users, assigning roles, and verifying real-time updates and comments.

@@ -1,0 +1,11 @@
+# Task ID: 13
+# Title: Deploy Application to Vercel and Supabase
+# Status: pending
+# Dependencies: 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+# Priority: medium
+# Description: Deploy the frontend and backend to Vercel and Supabase respectively.
+# Details:
+Deploy the Next.js frontend to Vercel and the Supabase backend services. Ensure proper configuration for environment variables and monitoring with Sentry and Supabase logs.
+
+# Test Strategy:
+Verify deployment by accessing the application in a production environment and checking for any deployment issues.

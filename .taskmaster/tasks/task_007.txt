@@ -1,0 +1,11 @@
+# Task ID: 7
+# Title: Develop Creative Generator
+# Status: pending
+# Dependencies: 4
+# Priority: medium
+# Description: Build the creative generator for ad copy and visuals.
+# Details:
+Use GPT-4o for generating ad copy and DALL·E 3 or SDXL for visuals. Implement features for creating ad copy for various platforms and generating brand-aligned visuals. Include an editable gallery with version history.
+
+# Test Strategy:
+Test the creative generator by creating ad copies and visuals, ensuring they meet the specified requirements and can be edited and versioned.

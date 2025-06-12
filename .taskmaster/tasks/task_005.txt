@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Build ICP Generator
+# Status: pending
+# Dependencies: 4
+# Priority: medium
+# Description: Develop the ICP generator to create and edit customer personas.
+# Details:
+Implement a feature using GPT-4o to generate ICP details such as name, title, bio, goals, pain points, and buying behavior. Allow users to edit generated personas and save them to their workspace.
+
+# Test Strategy:
+Test the ICP generator by creating multiple personas and verifying the accuracy and editability of the generated data.

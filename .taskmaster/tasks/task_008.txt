@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Implement Funnel Mapper
+# Status: pending
+# Dependencies: 4
+# Priority: medium
+# Description: Create a visual builder for mapping marketing funnels.
+# Details:
+Develop a drag-and-drop interface for building funnel flows. Allow users to connect steps and auto-link creatives and KPIs. Provide export functionality to image or PDF formats.
+
+# Test Strategy:
+Test the funnel mapper by creating and exporting funnel flows, ensuring the interface is intuitive and the exports are accurate.

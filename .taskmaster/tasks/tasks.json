@@ -1,0 +1,182 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Setup Project Repository",
+      "description": "Initialize the project repository with version control and basic structure.",
+      "details": "Create a Git repository for the project. Set up the basic directory structure for a Next.js application with Tailwind CSS. Initialize the repository with a README file and a .gitignore file for Node.js projects.",
+      "testStrategy": "Verify that the repository is initialized correctly and the basic structure is in place by checking the directory and file setup.",
+      "priority": "medium",
+      "dependencies": [],
+      "status": "in-progress",
+      "subtasks": []
+    },
+    {
+      "id": 2,
+      "title": "Configure Supabase",
+      "description": "Set up Supabase for authentication, database, and storage.",
+      "details": "Create a Supabase project. Configure authentication with email/password, OAuth, and magic links. Set up the PostgreSQL database schema for storing user data, funnels, and assets. Enable Supabase Storage for handling images and user files. Configure Supabase Realtime for collaboration and analytics.",
+      "testStrategy": "Test authentication flows, database connections, and storage access to ensure Supabase is configured correctly.",
+      "priority": "medium",
+      "dependencies": [
+        1
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 3,
+      "title": "Implement Frontend with Next.js and Tailwind CSS",
+      "description": "Develop the frontend using Next.js and Tailwind CSS according to the style guide.",
+      "details": "Set up a Next.js application. Integrate Tailwind CSS for styling. Implement the color palette, typography, and UI elements as specified in the style guide. Ensure responsiveness and accessibility across different devices.",
+      "testStrategy": "Perform UI testing to ensure the frontend matches the design specifications and is responsive.",
+      "priority": "medium",
+      "dependencies": [
+        1
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 4,
+      "title": "Develop Prompt-to-Funnel Engine",
+      "description": "Create the core engine that generates marketing funnels from user prompts.",
+      "details": "Use GPT-4o to process user prompts and generate marketing funnel components such as ICP, strategy, creatives, funnel flow, and KPIs. Implement a backend service using Supabase Edge Functions to handle prompt processing and data storage.",
+      "testStrategy": "Validate the engine by inputting various prompts and verifying the generated outputs for accuracy and relevance.",
+      "priority": "high",
+      "dependencies": [
+        2,
+        3
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 5,
+      "title": "Build ICP Generator",
+      "description": "Develop the ICP generator to create and edit customer personas.",
+      "details": "Implement a feature using GPT-4o to generate ICP details such as name, title, bio, goals, pain points, and buying behavior. Allow users to edit generated personas and save them to their workspace.",
+      "testStrategy": "Test the ICP generator by creating multiple personas and verifying the accuracy and editability of the generated data.",
+      "priority": "medium",
+      "dependencies": [
+        4
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 6,
+      "title": "Create Strategy Composer",
+      "description": "Implement the strategy composer for marketing plans.",
+      "details": "Develop a feature to generate marketing strategies using GPT-4o or Claude. Include channels, messaging pillars, campaign timelines, and budget breakdowns. Allow export of strategies in copy-pasteable or exportable formats.",
+      "testStrategy": "Validate the strategy composer by generating strategies for different scenarios and ensuring the outputs are comprehensive and exportable.",
+      "priority": "medium",
+      "dependencies": [
+        4
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 7,
+      "title": "Develop Creative Generator",
+      "description": "Build the creative generator for ad copy and visuals.",
+      "details": "Use GPT-4o for generating ad copy and DALL·E 3 or SDXL for visuals. Implement features for creating ad copy for various platforms and generating brand-aligned visuals. Include an editable gallery with version history.",
+      "testStrategy": "Test the creative generator by creating ad copies and visuals, ensuring they meet the specified requirements and can be edited and versioned.",
+      "priority": "medium",
+      "dependencies": [
+        4
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 8,
+      "title": "Implement Funnel Mapper",
+      "description": "Create a visual builder for mapping marketing funnels.",
+      "details": "Develop a drag-and-drop interface for building funnel flows. Allow users to connect steps and auto-link creatives and KPIs. Provide export functionality to image or PDF formats.",
+      "testStrategy": "Test the funnel mapper by creating and exporting funnel flows, ensuring the interface is intuitive and the exports are accurate.",
+      "priority": "medium",
+      "dependencies": [
+        4
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 9,
+      "title": "Develop Analytics & KPI Dashboard",
+      "description": "Implement a dashboard for analytics and KPI tracking.",
+      "details": "Create a dashboard to display auto-estimated metrics such as CAC, CPL, conversion rate, retention, and ROI. Include editable benchmarks and visual ROI simulation tools.",
+      "testStrategy": "Validate the dashboard by checking the accuracy of the metrics and the functionality of the simulation tools.",
+      "priority": "medium",
+      "dependencies": [
+        4
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 10,
+      "title": "Implement Team Collaboration Features",
+      "description": "Develop features for team collaboration and role management.",
+      "details": "Implement features to invite teammates, assign roles, and enable a comment system on funnels. Use Supabase Realtime for live collaboration and asset sharing.",
+      "testStrategy": "Test collaboration features by inviting users, assigning roles, and verifying real-time updates and comments.",
+      "priority": "medium",
+      "dependencies": [
+        2,
+        3
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 11,
+      "title": "Setup Payment Integration with Stripe",
+      "description": "Integrate Stripe for handling payments and subscriptions.",
+      "details": "Use Supabase functions or LemonSqueezy to integrate Stripe for payment processing. Implement subscription plans as outlined in the pricing model, including free, pro, team, and enterprise tiers.",
+      "testStrategy": "Test payment flows by simulating transactions and verifying subscription management.",
+      "priority": "medium",
+      "dependencies": [
+        2
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 12,
+      "title": "Implement Security and RBAC",
+      "description": "Set up security measures and role-based access control.",
+      "details": "Configure Supabase Auth with RLS for role-based access. Implement MFA, logs, audit trails, and data encryption. Define roles such as Admin, Editor, and Viewer.",
+      "testStrategy": "Test security features by attempting unauthorized access and verifying role-based restrictions.",
+      "priority": "medium",
+      "dependencies": [
+        2
+      ],
+      "status": "pending",
+      "subtasks": []
+    },
+    {
+      "id": 13,
+      "title": "Deploy Application to Vercel and Supabase",
+      "description": "Deploy the frontend and backend to Vercel and Supabase respectively.",
+      "details": "Deploy the Next.js frontend to Vercel and the Supabase backend services. Ensure proper configuration for environment variables and monitoring with Sentry and Supabase logs.",
+      "testStrategy": "Verify deployment by accessing the application in a production environment and checking for any deployment issues.",
+      "priority": "medium",
+      "dependencies": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "status": "pending",
+      "subtasks": []
+    }
+  ]
+}

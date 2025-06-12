@@ -1,0 +1,11 @@
+# Task ID: 12
+# Title: Implement Security and RBAC
+# Status: pending
+# Dependencies: 2
+# Priority: medium
+# Description: Set up security measures and role-based access control.
+# Details:
+Configure Supabase Auth with RLS for role-based access. Implement MFA, logs, audit trails, and data encryption. Define roles such as Admin, Editor, and Viewer.
+
+# Test Strategy:
+Test security features by attempting unauthorized access and verifying role-based restrictions.
