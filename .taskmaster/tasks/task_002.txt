@@ -1,6 +1,6 @@
 # Task ID: 2
 # Title: Configure Supabase
-# Status: pending
+# Status: in-progress
 # Dependencies: 1
 # Priority: medium
 # Description: Set up Supabase for authentication, database, and storage.

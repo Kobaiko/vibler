@@ -1,6 +1,6 @@
 # Task ID: 1
 # Title: Setup Project Repository
-# Status: in-progress
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Initialize the project repository with version control and basic structure.

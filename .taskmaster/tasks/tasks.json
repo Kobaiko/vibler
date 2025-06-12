@@ -8,7 +8,7 @@
       "testStrategy": "Verify that the repository is initialized correctly and the basic structure is in place by checking the directory and file setup.",
       "priority": "medium",
       "dependencies": [],
-      "status": "in-progress",
+      "status": "done",
       "subtasks": []
     },
     {
@@ -21,7 +21,7 @@
       "dependencies": [
         1
       ],
-      "status": "pending",
+      "status": "in-progress",
       "subtasks": []
     },
     {
