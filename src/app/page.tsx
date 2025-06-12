@@ -7,11 +7,15 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
       <Header />
 
+      <main id="main-content" role="main">
       {/* Hero Section */}
-      <section className="py-20 lg:py-32">
+      <section className="py-20 lg:py-32" aria-labelledby="hero-heading">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl lg:text-6xl font-display font-bold text-secondary-900 mb-6">
+            <h1 
+              id="hero-heading"
+              className="text-4xl lg:text-6xl font-display font-bold text-secondary-900 mb-6"
+            >
               Transform Ideas into
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-accent-500"> 
                 {" "}Marketing Funnels
@@ -166,6 +170,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      </main>
     </div>
   )
 }

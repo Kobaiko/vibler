@@ -1,14 +1,18 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserMenu } from './UserMenu'
+import { SkipLinks } from '@/components/accessibility'
+import { FocusManager, aria } from '@/lib/accessibility'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, loading } = useAuth()
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
 
   const navigation = [
     { name: 'Features', href: '/#features' },
@@ -17,9 +21,39 @@ export function Header() {
     { name: 'Blog', href: '/blog' },
   ]
 
+  // Handle mobile menu keyboard navigation
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false)
+        menuButtonRef.current?.focus()
+      }
+    }
+
+    const handleTabTrap = (event: KeyboardEvent) => {
+      if (mobileMenuOpen && mobileMenuRef.current) {
+        FocusManager.trapFocus(mobileMenuRef.current, event)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    document.addEventListener('keydown', handleTabTrap)
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.removeEventListener('keydown', handleTabTrap)
+    }
+  }, [mobileMenuOpen])
+
   return (
-    <header className="bg-white shadow-sm border-b border-secondary-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <SkipLinks />
+      <header 
+        className="bg-white shadow-sm border-b border-secondary-200 sticky top-0 z-50"
+        id="navigation"
+        role="banner"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <div className="flex items-center">
@@ -81,12 +115,15 @@ export function Header() {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <Button
+              ref={menuButtonRef}
               variant="ghost"
               size="sm"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2"
+              ariaLabel={mobileMenuOpen ? 'Close main menu' : 'Open main menu'}
+              {...aria.expanded(mobileMenuOpen)}
             >
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">{mobileMenuOpen ? 'Close main menu' : 'Open main menu'}</span>
               {mobileMenuOpen ? (
                 <svg
                   className="block h-6 w-6"
@@ -114,7 +151,12 @@ export function Header() {
 
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden">
+          <div 
+            ref={mobileMenuRef}
+            className="md:hidden"
+            role="menu"
+            {...aria.labelledBy('mobile-menu-button')}
+          >
             <div className="px-2 pt-2 pb-3 space-y-1 border-t border-secondary-200">
               {navigation.map((item) => (
                 <Link
@@ -165,5 +207,6 @@ export function Header() {
         )}
       </div>
     </header>
+    </>
   )
 } 
