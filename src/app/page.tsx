@@ -1,33 +1,11 @@
 import Link from 'next/link'
 import { Button, Card, CardHeader, CardContent } from '@/components/ui'
+import { Header } from '@/components/navigation'
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-secondary-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-display font-bold text-secondary-900">Vibler</h1>
-              <span className="ml-2 px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">Beta</span>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              <a href="#features" className="text-secondary-600 hover:text-secondary-900 transition-colors">Features</a>
-              <a href="#pricing" className="text-secondary-600 hover:text-secondary-900 transition-colors">Pricing</a>
-              <a href="#about" className="text-secondary-600 hover:text-secondary-900 transition-colors">About</a>
-            </nav>
-            <div className="flex items-center space-x-4">
-              <Link href="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm">Get Started</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="py-20 lg:py-32">

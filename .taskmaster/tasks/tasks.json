@@ -231,6 +231,20 @@
       ],
       "status": "pending",
       "subtasks": []
+    },
+    {
+      "id": 14,
+      "title": "Integrate Lemon Squeezy for Payment Processing and Subscription Management",
+      "description": "Integrate Lemon Squeezy to handle payment processing, subscription management, and billing for the Vibler platform.",
+      "details": "To integrate Lemon Squeezy, first, set up an account and obtain API keys. Implement the checkout integration using Lemon Squeezy's API to handle payments. Develop subscription plans and manage the subscription lifecycle, including creation, updates, and cancellations. Set up a billing dashboard to display transaction history and subscription details. Implement webhook handling to manage real-time updates for payment events and subscription changes. Ensure the customer portal is integrated for users to manage their subscriptions and payment methods. Finally, incorporate payment analytics to track revenue and user engagement.",
+      "testStrategy": "1. Verify API keys are correctly configured and secure.\n2. Test the checkout process to ensure payments are processed successfully.\n3. Validate subscription plan creation and lifecycle management, including upgrades and cancellations.\n4. Check the billing dashboard for accurate transaction and subscription data.\n5. Simulate webhook events to ensure real-time updates are handled correctly.\n6. Test the customer portal for usability and functionality in managing subscriptions.\n7. Review payment analytics for accuracy and insights into user behavior.",
+      "status": "pending",
+      "dependencies": [
+        2,
+        3
+      ],
+      "priority": "medium",
+      "subtasks": []
     }
   ]
 }
