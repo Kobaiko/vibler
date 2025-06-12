@@ -32,7 +32,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
       } else {
         onSuccess?.()
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -139,7 +139,7 @@ export function LoginForm({ onSuccess, onSwitchToSignup }: LoginFormProps) {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-secondary-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             {onSwitchToSignup ? (
               <button
                 onClick={onSwitchToSignup}

@@ -69,7 +69,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       } else {
         onSuccess?.()
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
