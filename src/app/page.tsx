@@ -1,96 +1,193 @@
+import Link from 'next/link'
+import { Button, Card, CardHeader, CardContent } from '@/components/ui'
+
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm border-b border-secondary-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Vibler</h1>
+              <h1 className="text-2xl font-display font-bold text-secondary-900">Vibler</h1>
+              <span className="ml-2 px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded-full">Beta</span>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <a href="#features" className="text-gray-500 hover:text-gray-900">Features</a>
-              <a href="#pricing" className="text-gray-500 hover:text-gray-900">Pricing</a>
-              <a href="#about" className="text-gray-500 hover:text-gray-900">About</a>
+              <a href="#features" className="text-secondary-600 hover:text-secondary-900 transition-colors">Features</a>
+              <a href="#pricing" className="text-secondary-600 hover:text-secondary-900 transition-colors">Pricing</a>
+              <a href="#about" className="text-secondary-600 hover:text-secondary-900 transition-colors">About</a>
             </nav>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-500 hover:text-gray-900">Sign In</button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Get Started</button>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">Sign In</Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm">Get Started</Button>
+              </Link>
             </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">
-          <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-            <span className="block">Transform Prompts into</span>
-            <span className="block text-blue-600">Marketing Funnels</span>
-          </h1>
-          <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-            Vibler uses AI to transform simple prompts into comprehensive marketing funnels. 
-            Generate customer personas, strategies, creative content, and visual funnel maps - all from a single prompt.
-          </p>
-          <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-            <div className="rounded-md shadow">
-              <button className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
-                Start Creating
-              </button>
-            </div>
-            <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
-              <button className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
-                Watch Demo
-              </button>
-            </div>
+      <section className="py-20 lg:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl lg:text-6xl font-display font-bold text-secondary-900 mb-6">
+              Transform Ideas into
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-accent-500"> 
+                {" "}Marketing Funnels
+              </span>
+            </h1>
+            <p className="text-xl text-secondary-600 mb-8 max-w-3xl mx-auto">
+              Vibler uses AI to convert your simple prompts into comprehensive marketing strategies, 
+              complete with customer personas, creative content, and visual funnel maps.
+            </p>
+                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
+               <Link href="/signup">
+                 <Button size="lg" className="shadow-lg">
+                   Start Building Your Funnel
+                 </Button>
+               </Link>
+               <Button variant="outline" size="lg">
+                 Watch Demo
+               </Button>
+             </div>
           </div>
         </div>
+      </section>
 
-        {/* Features Preview */}
-        <div className="mt-20">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mx-auto">
-                🚀
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Prompt-to-Funnel</h3>
-              <p className="mt-2 text-base text-gray-500">Transform ideas into complete marketing funnels instantly</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mx-auto">
-                👥
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">ICP Generator</h3>
-              <p className="mt-2 text-base text-gray-500">Create detailed customer personas automatically</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mx-auto">
-                🎨
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Creative Generator</h3>
-              <p className="mt-2 text-base text-gray-500">Generate ad copy and visual content</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mx-auto">
-                📊
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Analytics</h3>
-              <p className="mt-2 text-base text-gray-500">Track KPIs and performance metrics</p>
-            </div>
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-display font-bold text-secondary-900 mb-4">
+              Everything You Need to Build Winning Funnels
+            </h2>
+            <p className="text-lg text-secondary-600 max-w-2xl mx-auto">
+              From prompt to profit - our AI-powered platform handles every step of your marketing funnel creation.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardHeader
+                title="Prompt-to-Funnel Engine"
+                subtitle="Transform natural language into complete marketing strategies"
+              />
+              <CardContent>
+                <p className="text-secondary-600">
+                  Simply describe your product or service, and our AI will generate a comprehensive 
+                  marketing funnel with all the components you need to succeed.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardHeader
+                title="ICP Generator"
+                subtitle="Create detailed customer personas instantly"
+              />
+              <CardContent>
+                <p className="text-secondary-600">
+                  Generate ideal customer profiles with demographics, psychographics, pain points, 
+                  and motivations based on your business description.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardHeader
+                title="Creative Generator"
+                subtitle="AI-powered ad copy and visual content"
+              />
+              <CardContent>
+                <p className="text-secondary-600">
+                  Create compelling ad copy, email sequences, landing page content, and visual 
+                  assets tailored to your audience and brand voice.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardHeader
+                title="Strategy Composer"
+                subtitle="Comprehensive marketing strategy planning"
+              />
+              <CardContent>
+                <p className="text-secondary-600">
+                  Build complete marketing strategies with channel recommendations, budget allocation, 
+                  and timeline planning for maximum ROI.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardHeader
+                title="Funnel Mapper"
+                subtitle="Visual funnel builder and optimization"
+              />
+              <CardContent>
+                <p className="text-secondary-600">
+                  Create and visualize your marketing funnels with drag-and-drop simplicity. 
+                  Track performance and optimize for better conversions.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardHeader
+                title="Analytics Dashboard"
+                subtitle="Real-time performance tracking"
+              />
+              <CardContent>
+                <p className="text-secondary-600">
+                  Monitor KPIs, track conversions, and gain insights into your funnel performance 
+                  with comprehensive analytics and reporting.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </main>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-primary-600 to-accent-500">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl lg:text-4xl font-display font-bold text-white mb-6">
+            Ready to Transform Your Marketing?
+          </h2>
+          <p className="text-xl text-primary-100 mb-8">
+            Join thousands of marketers who are already building better funnels with Vibler.
+          </p>
+                     <Link href="/signup">
+             <Button 
+               size="xl" 
+               variant="secondary"
+               className="shadow-xl hover:shadow-2xl transform hover:scale-105"
+             >
+               Start Your Free Trial
+             </Button>
+           </Link>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-white mt-20">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <footer className="bg-secondary-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-base text-gray-500">
-              © 2024 Vibler. Built with Next.js and Tailwind CSS.
+            <h3 className="text-2xl font-display font-bold mb-4">Vibler</h3>
+            <p className="text-secondary-400 mb-6">
+              AI-powered marketing automation for modern businesses
             </p>
+            <div className="flex justify-center space-x-6">
+              <a href="#" className="text-secondary-400 hover:text-white transition-colors">Privacy</a>
+              <a href="#" className="text-secondary-400 hover:text-white transition-colors">Terms</a>
+              <a href="#" className="text-secondary-400 hover:text-white transition-colors">Support</a>
+            </div>
           </div>
         </div>
       </footer>
     </div>
-  );
+  )
 }

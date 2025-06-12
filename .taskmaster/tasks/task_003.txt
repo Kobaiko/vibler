@@ -9,3 +9,35 @@ Set up a Next.js application. Integrate Tailwind CSS for styling. Implement the 
 
 # Test Strategy:
 Perform UI testing to ensure the frontend matches the design specifications and is responsive.
+
+# Subtasks:
+## 1. Establish Design System with Next.js and Tailwind CSS [done]
+### Dependencies: None
+### Description: Create a comprehensive design system using Next.js and Tailwind CSS, incorporating the specified color palette, typography, and UI elements from the style guide to ensure consistency and scalability.
+### Details:
+Develop a set of reusable components and styles in Next.js and Tailwind CSS that adhere to the style guide, including color schemes, typography, and UI elements. This will serve as the foundation for the entire frontend, promoting consistency and efficiency in development. ([mobivery.com](https://mobivery.com/en/design-system-boost-the-experience-and-efficiency-of-your-mobile-app/?utm_source=openai))
+
+## 2. Implement Authentication UI Components [done]
+### Dependencies: 3.1
+### Description: Design and develop authentication UI components, including login, registration, and password recovery forms, ensuring they are user-friendly and align with the established design system.
+### Details:
+Create responsive and accessible authentication forms that allow users to log in, register, and recover passwords. Ensure these components are styled according to the design system and provide clear feedback for user actions. ([dribbble.com](https://dribbble.com/shots/14175718-Authentication-App-UI?utm_source=openai))
+
+## 3. Develop Navigation Components [in-progress]
+### Dependencies: 3.1
+### Description: Build navigation components such as sidebars, top bars, and menus, ensuring they are intuitive, responsive, and consistent with the design system.
+### Details:
+Implement navigation elements that allow users to easily move between different sections of the application. These components should be adaptable to various screen sizes and devices, maintaining usability and aesthetic consistency. ([mobivery.com](https://mobivery.com/en/design-system-boost-the-experience-and-efficiency-of-your-mobile-app/?utm_source=openai))
+
+## 4. Create Dashboard UI Components [pending]
+### Dependencies: 3.1
+### Description: Design and implement dashboard components, including data displays, charts, and interactive elements, ensuring they are informative, interactive, and adhere to the design system.
+### Details:
+Develop dashboard elements that present data in a clear and engaging manner, incorporating interactive features that enhance user experience. Ensure all components are styled according to the design system and are responsive across devices. ([mobivery.com](https://mobivery.com/en/design-system-boost-the-experience-and-efficiency-of-your-mobile-app/?utm_source=openai))
+
+## 5. Ensure Responsive and Accessible Design Across Devices [pending]
+### Dependencies: 3.1
+### Description: Implement responsive design techniques to ensure the application is accessible and provides a consistent user experience across different devices and screen sizes.
+### Details:
+Utilize Tailwind CSS's responsive design utilities to create layouts that adapt to various screen sizes. Ensure all UI components are accessible, following WCAG guidelines to accommodate users with disabilities. ([mobivery.com](https://mobivery.com/en/design-system-boost-the-experience-and-efficiency-of-your-mobile-app/?utm_source=openai))
+
