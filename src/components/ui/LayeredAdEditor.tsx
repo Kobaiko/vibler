@@ -928,14 +928,24 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
             {/* Edit Canvas */}
             <div className="flex-1 p-4 flex flex-col items-center justify-center">
               <h3 className="text-lg font-semibold mb-2">Edit Canvas</h3>
-              <div className="border border-gray-300">
+              <div className="border border-gray-300 inline-block">
                 <canvas
                   ref={canvasRef}
                   width={canvasDimensions.width}
                   height={canvasDimensions.height}
-                  className="border max-w-full max-h-full"
+                  className="border"
+                  style={{ 
+                    maxWidth: '600px', 
+                    maxHeight: '400px',
+                    width: 'auto',
+                    height: 'auto',
+                    aspectRatio: `${canvasDimensions.width}/${canvasDimensions.height}`
+                  }}
                   onMouseDown={handleMouseDown}
                 />
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                {canvasDimensions.width} × {canvasDimensions.height}px
               </div>
             </div>
           </div>
