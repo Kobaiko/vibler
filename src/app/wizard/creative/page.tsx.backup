@@ -1,0 +1,645 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { ArrowLeft, ArrowRight, Palette, Loader2, Wand2, CheckCircle, Download, Edit, Eye } from 'lucide-react';
+
+interface Creative {
+  id: string;
+  platform: string;
+  format: string;
+  headline: string;
+  description: string;
+  cta: string;
+  image_url: string;
+  targeting: string;
+  campaign_type: string;
+}
+
+export default function CreativeGeneratorPage() {
+  const router = useRouter();
+  const [step, setStep] = useState<'generate' | 'review'>('generate');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingMore, setIsGeneratingMore] = useState(false);
+  const [brandData, setBrandData] = useState(null);
+  const [icpData, setIcpData] = useState(null);
+  const [strategyData, setStrategyData] = useState(null);
+  const [creatives, setCreatives] = useState<Creative[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+
+  // Available platforms for selection
+  const availablePlatforms = [
+    { id: 'linkedin', name: 'LinkedIn', description: 'Professional network ads' },
+    { id: 'google', name: 'Google Ads', description: 'Search and display ads' },
+    { id: 'facebook', name: 'Facebook', description: 'Social media advertising' },
+    { id: 'instagram', name: 'Instagram', description: 'Visual social platform' },
+    { id: 'tiktok', name: 'TikTok', description: 'Short-form video content' },
+    { id: 'email', name: 'Email Marketing', description: 'Direct email campaigns' }
+  ];
+
+  useEffect(() => {
+    // Load data from previous steps
+    const savedBrandData = localStorage.getItem('wizard_brand_data');
+    const savedIcpData = localStorage.getItem('wizard_icp_data');
+    const savedStrategyData = localStorage.getItem('wizard_strategy_data');
+    
+    if (savedBrandData && savedIcpData && savedStrategyData) {
+      setBrandData(JSON.parse(savedBrandData));
+      setIcpData(JSON.parse(savedIcpData));
+      const strategy = JSON.parse(savedStrategyData);
+      setStrategyData(strategy);
+      
+      // Set default selected platforms from strategy, but allow user to change
+      const defaultPlatforms = strategy.targetChannels?.primary?.slice(0, 3) || ['linkedin', 'google', 'facebook'];
+      setSelectedPlatforms(defaultPlatforms.map((p: string) => p.toLowerCase()));
+    } else {
+      // Redirect back if missing data
+      router.push('/wizard');
+    }
+  }, [router]);
+
+  const togglePlatform = (platformId: string) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(platformId) 
+        ? prev.filter(id => id !== platformId)
+        : [...prev, platformId]
+    );
+  };
+
+  const generateCreatives = async (isMore = false) => {
+    if (!brandData || !icpData || !strategyData) return;
+    
+    // Validate that at least one platform is selected
+    if (selectedPlatforms.length === 0) {
+      alert('Please select at least one platform to generate creatives for.');
+      return;
+    }
+    
+    if (isMore) {
+      setIsGeneratingMore(true);
+    } else {
+      setIsGenerating(true);
+    }
+    
+    try {
+      // Generate creatives using the existing API but with user-selected platforms
+      const response = await fetch('/api/creatives/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Create professional ads for ${(brandData as any).brandName} targeting ${(icpData as any).jobTitle}`,
+          platforms: selectedPlatforms, // Use user-selected platforms instead of strategy channels
+          tone: 'professional',
+          targetAudience: (icpData as any).jobTitle,
+          productService: (brandData as any).description,
+          includeVisuals: true,
+          brandSettings: {
+            brandName: (brandData as any).brandName,
+            description: (brandData as any).description,
+            industry: (brandData as any).industry,
+            primaryColor: (brandData as any).primaryColor,
+            secondaryColor: (brandData as any).secondaryColor,
+            keywords: (brandData as any).keywords
+          },
+          // Use ICP pain points and goals for targeting
+          icpInsights: {
+            painPoints: (icpData as any).painPoints,
+            goals: (icpData as any).goals,
+            preferredChannels: (icpData as any).preferredChannels
+          },
+          // Use strategy recommendations
+          campaignContext: (strategyData as any).campaignRecommendations
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Creative generation response:', data);
+        
+        // Transform the API response to match our Creative interface
+        const transformedCreatives = (data.creatives || []).map((creative: any, index: number) => {
+          const baseId = isMore ? creatives.length + index + 1 : index + 1;
+          console.log(`Creative ${index} image_url:`, creative.image_url);
+          
+          return {
+            id: baseId.toString(),
+            platform: creative.platform,
+            format: 'Single Image', // Default format
+            headline: creative.headline,
+            description: creative.description,
+            cta: creative.call_to_action,
+            image_url: creative.image_url && creative.image_url !== '/api/placeholder/500/300' 
+              ? creative.image_url 
+              : `https://picsum.photos/seed/${creative.platform}-${baseId}/500/300?blur=1`,
+            targeting: creative.target_audience,
+            campaign_type: 'Lead Generation' // Default campaign type
+          };
+        });
+        
+        console.log('Transformed creatives:', transformedCreatives);
+        
+        if (isMore) {
+          // Append new creatives to existing ones
+          setCreatives(prev => [...prev, ...transformedCreatives]);
+        } else {
+          // Replace creatives (first generation)
+          setCreatives(transformedCreatives);
+          setStep('review');
+        }
+      } else {
+        console.error('Failed to generate creatives - Status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        // Generate sample creatives as fallback
+        if (!isMore) {
+          generateSampleCreatives();
+        }
+      }
+    } catch (error) {
+      console.error('Error generating creatives:', error);
+      if (!isMore) {
+        generateSampleCreatives();
+      }
+    } finally {
+      if (isMore) {
+        setIsGeneratingMore(false);
+      } else {
+        setIsGenerating(false);
+      }
+    }
+  };
+
+  const generateSampleCreatives = () => {
+    const sampleCreatives: Creative[] = [
+      {
+        id: '1',
+        platform: 'LinkedIn',
+        format: 'Single Image',
+        headline: `Transform Your ${(brandData as any).industry} Workflow`,
+        description: `Discover how ${(brandData as any).brandName} helps professionals like you achieve better results. Join thousands of satisfied customers.`,
+        cta: 'Learn More',
+        image_url: 'https://picsum.photos/seed/linkedin-sample/1024/1024',
+        targeting: (icpData as any).jobTitle,
+        campaign_type: 'Lead Generation'
+      },
+      {
+        id: '2',
+        platform: 'Google Ads',
+        format: 'Text Ad',
+        headline: `#1 ${(brandData as any).industry} Solution`,
+        description: `Get the tools you need to succeed. Trusted by professionals worldwide. Start your free trial today.`,
+        cta: 'Start Free Trial',
+        image_url: 'https://picsum.photos/seed/google-sample/1024/1024',
+        targeting: 'High-intent searchers',
+        campaign_type: 'Search Campaign'
+      },
+      {
+        id: '3',
+        platform: 'Facebook',
+        format: 'Video Ad',
+        headline: 'See Why Professionals Choose Us',
+        description: `Watch how ${(brandData as any).brandName} transforms the way you work. Real results from real customers.`,
+        cta: 'Watch Demo',
+        image_url: 'https://picsum.photos/seed/facebook-sample/1792/1024',
+        targeting: (icpData as any).demographics.ageRange + ' professionals',
+        campaign_type: 'Brand Awareness'
+      }
+    ];
+    setCreatives(sampleCreatives);
+    setStep('review');
+  };
+
+  const handleCompleteWizard = async () => {
+    // Save creative data and mark wizard as complete
+    localStorage.setItem('wizard_creative_data', JSON.stringify(creatives));
+    localStorage.setItem('wizard_creative_completed', 'true');
+    
+    // Save each creative to the database for editing
+    try {
+      for (const creative of creatives) {
+        const creativeData = {
+          platform: creative.platform,
+          headline: creative.headline,
+          description: creative.description,
+          call_to_action: creative.cta,
+          tone: creative.targeting || 'professional',
+          target_audience: creative.targeting || 'General audience',
+          product_service: (brandData as any)?.description || '',
+          image_url: creative.image_url,
+          conversion_score: 85 // Default score
+        };
+        
+        await fetch('/api/creatives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(creativeData)
+        });
+      }
+    } catch (error) {
+      console.error('Error saving creatives to database:', error);
+    }
+    
+    // Create a complete campaign object
+    const campaignData = {
+      id: Date.now().toString(),
+      name: `${(brandData as any).brandName} Marketing Campaign`,
+      brand: brandData,
+      icp: icpData,
+      strategy: strategyData,
+      creatives: creatives,
+      created_at: new Date().toISOString(),
+      status: 'active'
+    };
+    
+    // Save campaign
+    const existingCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+    existingCampaigns.push(campaignData);
+    localStorage.setItem('campaigns', JSON.stringify(existingCampaigns));
+    
+    // Navigate to campaigns dashboard
+    router.push('/wizard/complete');
+  };
+
+  const handleEditCreative = async (creative: Creative) => {
+    try {
+      // First save the creative to the database if it doesn't exist there
+      const creativeData = {
+        platform: creative.platform,
+        headline: creative.headline,
+        description: creative.description,
+        call_to_action: creative.cta,
+        tone: creative.targeting || 'professional',
+        target_audience: creative.targeting || 'General audience',
+        product_service: (brandData as any)?.description || '',
+        image_url: creative.image_url,
+        conversion_score: 85 // Default score
+      };
+      
+      const response = await fetch('/api/creatives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(creativeData)
+      });
+      
+      if (response.ok) {
+        const savedCreative = await response.json();
+        // Redirect to editor with the actual database ID
+        router.push(`/dashboard/creative?edit=${savedCreative.id}`);
+      } else {
+        console.error('Failed to save creative for editing');
+        // Fallback to wizard editor
+        localStorage.setItem('current_creative_edit', JSON.stringify(creative));
+        router.push(`/dashboard/creative?edit=${creative.id}`);
+      }
+    } catch (error) {
+      console.error('Error saving creative for editing:', error);
+      // Fallback to wizard editor
+      localStorage.setItem('current_creative_edit', JSON.stringify(creative));
+      router.push(`/dashboard/creative?edit=${creative.id}`);
+    }
+  };
+
+  if (!brandData || !icpData || !strategyData) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (step === 'generate') {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="mb-8">
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/wizard')}
+              className="mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Overview
+            </Button>
+            
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Generate Your Ad Creatives
+            </h1>
+            <p className="text-gray-600">
+              The final step! We'll create professional ad creatives based on your brand, audience, and strategy.
+            </p>
+          </div>
+
+          <div className="space-y-6 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Campaign Context</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <strong>Brand:</strong> {(brandData as any).brandName}
+                  <br />
+                  <strong>Target Audience:</strong> {(icpData as any).jobTitle}
+                  <br />
+                  <strong>Selected Channels:</strong> {selectedPlatforms.length > 0 ? selectedPlatforms.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ') : 'None selected'}
+                </div>
+                <div>
+                  <strong>Key Messages from Strategy:</strong>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {(strategyData as any).campaignRecommendations[0]?.keyMessages.map((message: string, index: number) => (
+                      <Badge key={index} variant="secondary">{message}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Choose Your Marketing Channels</CardTitle>
+                <CardDescription>
+                  Select the platforms where you want to run your ad campaigns. You can choose different channels than those recommended in your strategy.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {availablePlatforms.map((platform) => (
+                    <div
+                      key={platform.id}
+                      onClick={() => togglePlatform(platform.id)}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-300 ${
+                        selectedPlatforms.includes(platform.id)
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                            selectedPlatforms.includes(platform.id)
+                              ? 'border-blue-500 bg-blue-500'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          {selectedPlatforms.includes(platform.id) && (
+                            <CheckCircle className="w-3 h-3 text-white" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">{platform.name}</h4>
+                          <p className="text-sm text-gray-500">{platform.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {selectedPlatforms.length === 0 && (
+                  <p className="text-sm text-red-600 mt-2">Please select at least one platform to generate creatives.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Target Pain Points & Goals</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <strong>Pain Points to Address:</strong>
+                      <ul className="text-sm text-gray-600 mt-1">
+                        {(icpData as any).painPoints.slice(0, 3).map((pain: string, index: number) => (
+                          <li key={index}>• {pain}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <strong>Goals to Highlight:</strong>
+                      <ul className="text-sm text-gray-600 mt-1">
+                        {(icpData as any).goals.slice(0, 3).map((goal: string, index: number) => (
+                          <li key={index}>• {goal}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Palette className="w-5 h-5 text-blue-600" />
+                <span>AI Creative Generation</span>
+              </CardTitle>
+              <CardDescription>
+                We'll generate multiple ad variations optimized for your selected channels, incorporating your brand identity and addressing your audience's specific needs.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => generateCreatives()}
+                disabled={isGenerating || selectedPlatforms.length === 0}
+                className="w-full"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating Your Creatives...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Generate Ad Creatives
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-8">
+            <h3 className="font-semibold text-blue-900 mb-2">🎨 What We'll Create:</h3>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Platform-specific ad formats (LinkedIn, Google, Facebook)</li>
+              <li>• Professional headlines addressing your audience's pain points</li>
+              <li>• Compelling descriptions highlighting your unique value</li>
+              <li>• Strategic CTAs aligned with your campaign objectives</li>
+              <li>• High-quality images with your brand colors and style</li>
+              <li>• Ready-to-use ads you can launch immediately</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Review step
+  return (
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => setStep('generate')}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          
+          <div className="flex items-center space-x-2 text-green-600 mb-4">
+            <CheckCircle className="w-6 h-6" />
+            <span className="text-lg font-semibold">Creatives Generated Successfully!</span>
+          </div>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Your Professional Ad Creatives
+          </h1>
+          <p className="text-gray-600">
+            Ready-to-use ads tailored to your brand, audience, and marketing strategy.
+          </p>
+        </div>
+
+        {creatives.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+            {creatives.map((creative, index) => (
+              <Card key={creative.id} className="overflow-hidden">
+                <div className="relative">
+                  <img 
+                    src={creative.image_url}
+                    alt={creative.headline}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMzIuNSAxNzVIMjY3LjVWMTkwSDI1MEwyNDAuNSAyMDBMMjMwIDIxMEgyNDAuNUwyNTAgMjIwSDI2Ny41VjIzNUgyMzIuNVYyMjBIMjUwTDI1OS41IDIxMEwyNzAgMjAwSDI1OS41TDI1MCAxOTBIMjMyLjVWMTc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
+                    }}
+                  />
+                  <div className="absolute top-2 right-2">
+                    <Badge className="bg-white text-gray-800">
+                      {creative.platform}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline">{creative.format}</Badge>
+                    <Badge variant="secondary">{creative.campaign_type}</Badge>
+                  </div>
+                  <CardTitle className="text-lg leading-tight">
+                    {creative.headline}
+                  </CardTitle>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <p className="text-gray-600 text-sm line-clamp-3">
+                    {creative.description}
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">CTA:</span>
+                      <Badge variant="outline">{creative.cta}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Targeting:</span>
+                      <span className="text-sm text-gray-600">{creative.targeting}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-2 pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleEditCreative(creative)}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(creative.image_url, '_blank')}
+                    >
+                      <Eye className="w-3 h-3" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = creative.image_url;
+                        link.download = `${creative.platform}_ad_${creative.id}.jpg`;
+                        link.click();
+                      }}
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        <div className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Wand2 className="w-5 h-5 text-blue-600" />
+                <span>Generate More Creatives</span>
+              </CardTitle>
+              <CardDescription>
+                Want more creative variations? Generate additional ads that will be added to your existing ones.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => generateCreatives(true)}
+                disabled={isGeneratingMore}
+                variant="outline"
+                size="lg"
+                className="w-full"
+              >
+                {isGeneratingMore ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating More...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Generate More Creatives
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="text-center bg-white rounded-lg p-8 border border-gray-200">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">🎉 Congratulations!</h2>
+            <p className="text-gray-600">
+              You've successfully completed your marketing campaign setup. Your ads are ready to launch!
+            </p>
+          </div>
+          
+          <div className="flex justify-center space-x-4">
+            <Button 
+              onClick={handleCompleteWizard}
+              size="lg"
+              className="px-8 py-3"
+            >
+              Complete Setup & Save Campaign
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 

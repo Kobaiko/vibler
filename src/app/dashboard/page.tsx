@@ -1,350 +1,332 @@
 'use client'
 
-import React from 'react'
-import { Breadcrumb, useBreadcrumbs } from '@/components/navigation'
-import { Card, CardHeader, CardContent } from '@/components/ui'
-import { 
-  StatCard, 
-  ProgressBar, 
-  CircularProgress,
-  CustomLineChart,
-  CustomPieChart,
-  DataTable,
-  StatusBadge,
-  ActivityTimeline,
-  QuickActions
-} from '@/components/dashboard'
-import { usePathname } from 'next/navigation'
-import { 
-  Users, 
-  Target, 
-  DollarSign,
-  Zap,
-  Plus,
-  Settings,
-  BarChart3
-} from 'lucide-react'
-
-// Sample data for demonstrations
-const chartData = [
-  { name: 'Jan', conversions: 65, leads: 80, revenue: 4000 },
-  { name: 'Feb', conversions: 78, leads: 95, revenue: 5200 },
-  { name: 'Mar', conversions: 89, leads: 110, revenue: 6100 },
-  { name: 'Apr', conversions: 95, leads: 125, revenue: 7300 },
-  { name: 'May', conversions: 112, leads: 140, revenue: 8500 },
-  { name: 'Jun', conversions: 128, leads: 155, revenue: 9800 },
-]
-
-const pieData = [
-  { name: 'Email Campaigns', value: 35 },
-  { name: 'Social Media', value: 25 },
-  { name: 'Direct Traffic', value: 20 },
-  { name: 'Paid Ads', value: 15 },
-  { name: 'Referrals', value: 5 },
-]
-
-const tableData = [
-  { 
-    id: 1, 
-    name: 'E-commerce Funnel', 
-    status: 'Active', 
-    conversions: 124, 
-    created: '2024-06-01',
-    performance: 85
-  },
-  { 
-    id: 2, 
-    name: 'Lead Magnet Campaign', 
-    status: 'Paused', 
-    conversions: 89, 
-    created: '2024-06-05',
-    performance: 72
-  },
-  { 
-    id: 3, 
-    name: 'Product Launch Sequence', 
-    status: 'Active', 
-    conversions: 156, 
-    created: '2024-06-10',
-    performance: 91
-  },
-  { 
-    id: 4, 
-    name: 'Newsletter Signup Flow', 
-    status: 'Draft', 
-    conversions: 0, 
-    created: '2024-06-12',
-    performance: 0
-  },
-]
-
-const activities = [
-  {
-    id: '1',
-    type: 'created' as const,
-    title: 'New funnel created',
-    description: 'E-commerce checkout optimization funnel',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-    user: { name: 'John Doe' }
-  },
-  {
-    id: '2',
-    type: 'completed' as const,
-    title: 'Campaign analysis finished',
-    description: 'Lead magnet performance report generated',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    user: { name: 'Sarah Smith' }
-  },
-  {
-    id: '3',
-    type: 'updated' as const,
-    title: 'Funnel updated',
-    description: 'Product launch sequence conversion rate improved',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
-    user: { name: 'Mike Johnson' }
-  },
-  {
-    id: '4',
-    type: 'shared' as const,
-    title: 'Report shared',
-    description: 'Monthly performance dashboard shared with team',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-    user: { name: 'Emily Davis' }
-  },
-]
-
-const quickActions = [
-  {
-    id: '1',
-    title: 'Create New Funnel',
-    description: 'Build a new marketing funnel from scratch',
-    icon: <Plus className="w-5 h-5" />,
-    onClick: () => console.log('Create funnel'),
-    variant: 'primary' as const
-  },
-  {
-    id: '2',
-    title: 'Generate ICP',
-    description: 'Create ideal customer persona',
-    icon: <Users className="w-5 h-5" />,
-    onClick: () => console.log('Generate ICP'),
-    variant: 'success' as const
-  },
-  {
-    id: '3',
-    title: 'View Analytics',
-    description: 'Detailed performance metrics',
-    icon: <BarChart3 className="w-5 h-5" />,
-    onClick: () => console.log('View analytics'),
-    variant: 'default' as const
-  },
-  {
-    id: '4',
-    title: 'Campaign Settings',
-    description: 'Configure automation rules',
-    icon: <Settings className="w-5 h-5" />,
-    onClick: () => console.log('Campaign settings'),
-    variant: 'default' as const
-  },
-]
-
-type TableRowType = {
-  id: number
-  name: string
-  status: string
-  conversions: number
-  created: string
-  performance: number
-}
-
-const tableColumns: Array<{
-  key: keyof TableRowType
-  title: string
-  sortable?: boolean
-  render?: (value: TableRowType[keyof TableRowType], row: TableRowType) => React.ReactNode
-}> = [
-  {
-    key: 'name',
-    title: 'Funnel Name',
-    sortable: true,
-  },
-  {
-    key: 'status',
-    title: 'Status',
-    render: (value) => (
-      <StatusBadge 
-        status={String(value)} 
-        variant={
-          value === 'Active' ? 'success' : 
-          value === 'Paused' ? 'warning' : 
-          'default'
-        } 
-      />
-    ),
-  },
-  {
-    key: 'conversions',
-    title: 'Conversions',
-    sortable: true,
-  },
-  {
-    key: 'performance',
-    title: 'Performance',
-    render: (value) => (
-      <div className="w-20">
-        <ProgressBar 
-          value={Number(value)} 
-          variant={Number(value) > 80 ? 'success' : Number(value) > 60 ? 'warning' : 'error'}
-          size="sm" 
-          showValue 
-        />
-      </div>
-    ),
-  },
-  {
-    key: 'created',
-    title: 'Created',
-    sortable: true,
-  },
-]
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { ArrowRight, TrendingUp, TrendingDown, Users, Target, DollarSign, Zap, Plus, BarChart3, Settings, ChartColumn, Activity, Calendar, Clock, Eye, Edit, Download, Star, Heart, Bookmark, PlusCircle, Wand2 } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import NumberTicker from '@/components/ui/number-ticker'
 
 export default function DashboardPage() {
-  const pathname = usePathname()
-  const breadcrumbItems = useBreadcrumbs(pathname)
+  const [stats, setStats] = useState({
+    totalCreatives: 0,
+    totalStrategies: 0,
+    totalICPs: 0,
+    totalFunnels: 0
+  })
+  const [recentCreatives, setRecentCreatives] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/creatives').then(res => res.json()),
+      fetch('/api/strategy').then(res => res.json()),
+      fetch('/api/icps').then(res => res.json()),
+      // Add funnels API when available
+    ]).then(([creatives, strategies, icps]) => {
+      setStats({
+        totalCreatives: Array.isArray(creatives) ? creatives.length : 0,
+        totalStrategies: Array.isArray(strategies) ? strategies.length : 0,
+        totalICPs: Array.isArray(icps) ? icps.length : 0,
+        totalFunnels: 0 // TODO: Add when funnels API is ready
+      })
+      setRecentCreatives(Array.isArray(creatives) ? creatives.slice(0, 3) : [])
+      setLoading(false)
+    }).catch(error => {
+      console.error('Error loading dashboard data:', error)
+      setLoading(false)
+    })
+  }, [])
+
+  const EmptyStateCard = ({ 
+    title, 
+    description, 
+    actionText, 
+    actionHref, 
+    icon: Icon, 
+    gradient 
+  }: {
+    title: string
+    description: string
+    actionText: string
+    actionHref: string
+    icon: any
+    gradient: string
+  }) => (
+    <Card className="border-dashed border-2 border-gray-300 hover:border-purple-300 transition-colors">
+      <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+        <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center mb-4`}>
+          <Icon className="w-8 h-8 text-white" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+        <p className="text-sm text-gray-600 mb-4 max-w-sm">{description}</p>
+        <Link href={actionHref}>
+          <Button className="modern-button-primary">
+            <PlusCircle className="w-4 h-4 mr-2" />
+            {actionText}
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
+  )
 
   return (
-    <div className="p-6">
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} className="mb-6" />
-
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-secondary-900 mb-2">
-          Dashboard
-        </h1>
-        <p className="text-secondary-600">
-          Welcome back! Here&apos;s an overview of your marketing automation.
-        </p>
+    <div className="min-h-screen bg-gray-50/50 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back! Manage your campaigns and marketing tools.</p>
+        </div>
+        <div className="flex space-x-3">
+          <Link href="/dashboard/campaigns">
+            <Button variant="outline" className="modern-button-secondary">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              <span>View Campaigns</span>
+            </Button>
+          </Link>
+          <Link href="/wizard">
+            <Button className="modern-button-primary bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Wand2 className="w-4 h-4 mr-2" />
+              <span className="text-white font-semibold">Marketing Wizard</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Marketing Wizard CTA - for new users */}
+      <div className="mb-8 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+              <Wand2 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">New to Vibler? Start with our Guided Wizard</h3>
+              <p className="text-gray-600">Create your first complete marketing campaign in minutes with our step-by-step wizard.</p>
+            </div>
+          </div>
+          <Link href="/wizard">
+            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Wand2 className="w-4 h-4 mr-2" />
+              Start Wizard
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Total Leads"
-          value="2,847"
-          icon={<Users className="w-6 h-6" />}
-          trend={{ value: 12.3, label: 'vs last month' }}
-          variant="primary"
-        />
-        <StatCard
-          title="Conversion Rate"
-          value="8.2%"
-          icon={<Target className="w-6 h-6" />}
-          trend={{ value: 5.1, label: 'vs last month' }}
-          variant="success"
-        />
-        <StatCard
-          title="Revenue"
-          value="$48,950"
-          icon={<DollarSign className="w-6 h-6" />}
-          trend={{ value: -2.4, label: 'vs last month' }}
-          variant="warning"
-        />
-        <StatCard
-          title="Active Funnels"
-          value="14"
-          icon={<Zap className="w-6 h-6" />}
-          trend={{ value: 18.7, label: 'vs last month' }}
-          variant="default"
-        />
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+              <Edit className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full"></div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">Total Creatives</p>
+            <NumberTicker
+              value={stats.totalCreatives}
+              className="text-2xl font-bold text-gray-900"
+              delay={0.2}
+            />
+            {stats.totalCreatives === 0 && (
+              <p className="text-xs text-gray-400 mt-1">No creatives generated yet</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Target className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">Marketing Strategies</p>
+            <NumberTicker
+              value={stats.totalStrategies}
+              className="text-2xl font-bold text-gray-900"
+              delay={0.4}
+            />
+            {stats.totalStrategies === 0 && (
+              <p className="text-xs text-gray-400 mt-1">No strategies created yet</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+              <Users className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="w-1 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">ICPs Created</p>
+            <NumberTicker
+              value={stats.totalICPs}
+              className="text-2xl font-bold text-gray-900"
+              delay={0.6}
+            />
+            {stats.totalICPs === 0 && (
+              <p className="text-xs text-gray-400 mt-1">No customer profiles yet</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
+              <Zap className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div className="w-1 h-8 bg-gradient-to-b from-yellow-500 to-yellow-600 rounded-full"></div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">Sales Funnels</p>
+            <NumberTicker
+              value={stats.totalFunnels}
+              className="text-2xl font-bold text-gray-900"
+              delay={0.8}
+            />
+            {stats.totalFunnels === 0 && (
+              <p className="text-xs text-gray-400 mt-1">No funnels built yet</p>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <CustomLineChart
-          title="Performance Overview"
-          subtitle="Monthly trends for key metrics"
-          data={chartData}
-          lines={[
-            { dataKey: 'conversions', name: 'Conversions', color: '#2563eb' },
-            { dataKey: 'leads', name: 'Leads', color: '#16a34a' },
-          ]}
-        />
-        
-        <CustomPieChart
-          title="Traffic Sources"
-          subtitle="Lead generation breakdown"
-          data={pieData}
-        />
+      {/* Quick Actions Grid */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Link href="/dashboard/creative" className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                <Edit className="w-6 h-6 text-white" />
+              </div>
+              <div className="w-1 h-8 bg-gradient-to-b from-pink-500 to-purple-600 rounded-full"></div>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">Creative Generator</h3>
+            <p className="text-sm text-gray-600 mb-4">Generate AI-powered ad creatives and social media content</p>
+            <div className="flex items-center text-purple-600 text-sm font-medium group-hover:translate-x-1 transition-transform">
+              <span>Get Started</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </div>
+          </Link>
+
+          <Link href="/dashboard/strategy" className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-cyan-600 rounded-full"></div>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">Strategy Composer</h3>
+            <p className="text-sm text-gray-600 mb-4">Build comprehensive marketing strategies with AI assistance</p>
+            <div className="flex items-center text-blue-600 text-sm font-medium group-hover:translate-x-1 transition-transform">
+              <span>Create Strategy</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </div>
+          </Link>
+
+          <Link href="/dashboard/icps" className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div className="w-1 h-8 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full"></div>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">ICP Generator</h3>
+            <p className="text-sm text-gray-600 mb-4">Define your ideal customer profiles with AI insights</p>
+            <div className="flex items-center text-green-600 text-sm font-medium group-hover:translate-x-1 transition-transform">
+              <span>Create ICP</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </div>
+          </Link>
+
+          <Link href="/dashboard/campaigns" className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <div className="w-1 h-8 bg-gradient-to-b from-orange-500 to-red-600 rounded-full"></div>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">Campaign Manager</h3>
+            <p className="text-sm text-gray-600 mb-4">View and manage all your marketing campaigns</p>
+            <div className="flex items-center text-orange-600 text-sm font-medium group-hover:translate-x-1 transition-transform">
+              <span>View Campaigns</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </div>
+          </Link>
+        </div>
       </div>
 
-      {/* Progress and Actions Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader 
-            title="Monthly Goals" 
-            subtitle="Track your progress this month" 
-          />
-          <CardContent className="space-y-4">
-            <ProgressBar
-              label="Lead Generation"
-              value={75}
-              variant="primary"
-              showValue
-            />
-            <ProgressBar
-              label="Conversion Rate"
-              value={88}
-              variant="success"
-              showValue
-            />
-            <ProgressBar
-              label="Revenue Target"
-              value={62}
-              variant="warning"
-              showValue
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader 
-            title="Overall Performance" 
-            subtitle="This month&apos;s summary" 
-          />
-          <CardContent className="flex justify-center">
-            <CircularProgress
-              value={78}
-              variant="primary"
-              size={120}
-            />
-          </CardContent>
-        </Card>
-
-        <QuickActions
-          actions={quickActions}
-          title="Quick Actions"
-          subtitle="Common tasks"
-          columns={1}
-        />
-      </div>
-
-      {/* Table and Activity Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
-          <DataTable
-            title="Active Funnels"
-            subtitle="Manage your marketing funnels"
-            data={tableData}
-            columns={tableColumns}
-            onRowClick={(row) => console.log('Row clicked:', row)}
-          />
+      {/* Content Area - Show empty states or recent items */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
         </div>
         
-        <ActivityTimeline
-          activities={activities}
-          maxItems={8}
-        />
+        {recentCreatives.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recentCreatives.map((creative: any, index: number) => (
+              <div key={creative.id || index} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                <div className="h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                      {creative.platform}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(creative.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">{creative.headline}</h3>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{creative.description}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">Score:</span>
+                      <span className="text-sm font-semibold text-green-600">{creative.conversion_score}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <EmptyStateCard
+              title="Try the Marketing Wizard"
+              description="Get started with our guided wizard to create your first complete campaign"
+              actionText="Start Wizard"
+              actionHref="/wizard"
+              icon={Wand2}
+              gradient="from-purple-500 to-pink-600"
+            />
+            
+            <EmptyStateCard
+              title="Create Your First Creative"
+              description="Start generating AI-powered ad creatives for your marketing campaigns"
+              actionText="Generate Creative"
+              actionHref="/dashboard/creative"
+              icon={Edit}
+              gradient="from-pink-500 to-purple-600"
+            />
+            
+            <EmptyStateCard
+              title="Build a Marketing Strategy"
+              description="Develop comprehensive marketing strategies tailored to your business goals"
+              actionText="Create Strategy"
+              actionHref="/dashboard/strategy"
+              icon={Target}
+              gradient="from-blue-500 to-cyan-600"
+            />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,0 +1,662 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Replicate Configuration
+const REPLICATE_API_TOKEN = Deno.env.get('REPLICATE_API_TOKEN');
+
+if (!REPLICATE_API_TOKEN) {
+  console.error('[Error] REPLICATE_API_TOKEN environment variable is required');
+}
+
+interface AdFormat {
+  name: string;
+  width: number;
+  height: number;
+  aspectRatio: string;
+}
+
+interface PlatformConfig {
+  name: string;
+  formats: AdFormat[];
+}
+
+// Platform configurations - ONLY the formats requested by user
+const platformConfigs: Record<string, PlatformConfig> = {
+  google: {
+    name: 'Google Ads',
+    formats: [
+      { name: 'Medium Rectangle', width: 300, height: 250, aspectRatio: '5:4' },
+      { name: 'Large Rectangle', width: 336, height: 280, aspectRatio: '5:4' },
+      { name: 'Wide Skyscraper', width: 160, height: 600, aspectRatio: '2:3' }
+    ]
+  },
+  facebook: {
+    name: 'Facebook',
+    formats: [
+      { name: 'Feed Ad', width: 1200, height: 628, aspectRatio: '16:9' },
+      { name: 'Story Ad', width: 1080, height: 1920, aspectRatio: '9:16' }
+    ]
+  },
+  instagram: {
+    name: 'Instagram',
+    formats: [
+      { name: 'Feed Post', width: 1080, height: 1080, aspectRatio: '1:1' },
+      { name: 'Story Ad', width: 1080, height: 1920, aspectRatio: '9:16' }
+    ]
+  },
+  linkedin: {
+    name: 'LinkedIn',
+    formats: [
+      { name: 'Single Image Ad', width: 1200, height: 627, aspectRatio: '16:9' },
+      { name: 'Sponsored Content', width: 1200, height: 1200, aspectRatio: '1:1' }
+    ]
+  }
+};
+
+// Helper function to convert business descriptions into visual concepts
+async function generateVisualConcepts(businessDescription: string, targetAudience: string): Promise<string> {
+  const conceptPrompt = `Convert this business description into specific, concrete visual concepts for an ad image (NO TEXT):
+
+Business: ${businessDescription}
+Target: ${targetAudience}
+
+Based on the business type, generate specific visual concepts that directly relate to the industry and services. For example:
+- For marketing services: Modern office spaces, strategy meetings, digital dashboards, collaboration scenes
+- For tech companies: Sleek devices, digital interfaces, innovation labs, modern workspaces
+- For consulting: Professional meetings, presentation scenarios, business environments
+- For e-commerce: Product displays, shopping experiences, fulfillment centers
+- For healthcare: Clean medical environments, wellness scenes, care interactions
+- For finance: Professional banking environments, investment scenarios, financial planning
+
+Create a visual scene description that DIRECTLY relates to the specific business and industry mentioned. Be concrete and specific, not abstract. Focus on realistic scenes, professional environments, and industry-specific elements that would resonate with the target audience.
+
+Respond with a detailed visual description of a realistic scene - no text, words, or typography.`;
+
+  try {
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: "openai/gpt-4o-mini",
+        input: {
+          prompt: conceptPrompt,
+          max_tokens: 150,
+          temperature: 0.7,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      console.log(`[Warning] Failed to generate visual concepts: ${response.status}`);
+      return 'professional growth and success visualization with upward trending elements';
+    }
+
+    const result = await response.json();
+    
+    // Poll for completion
+    let pollResult = result;
+    while (pollResult.status !== 'succeeded' && pollResult.status !== 'failed') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${pollResult.id}`, {
+        headers: {
+          'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        },
+      });
+      
+      if (!pollResponse.ok) {
+        throw new Error(`Polling failed: ${pollResponse.status}`);
+      }
+      
+      pollResult = await pollResponse.json();
+      
+      if (pollResult.status === 'failed') {
+        throw new Error(`Visual concept generation failed: ${pollResult.error}`);
+      }
+    }
+    
+    const visualConcepts = pollResult.output?.trim() || 'professional growth and success visualization';
+    
+    console.log(`[Info] Generated visual concepts: ${visualConcepts}`);
+    return visualConcepts;
+  } catch (error) {
+    console.log(`[Warning] Error generating visual concepts:`, error);
+    return 'professional growth and success visualization with modern design elements';
+  }
+}
+
+// Retry logic with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      console.log(`[Retry] Attempt ${attempt}/${maxRetries} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      console.log(`[Retry] Waiting ${delay}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
+// Google Imagen 3 supports flexible aspect ratios with exact dimensions
+
+async function generateText(prompt: string, maxTokens: number = 1000): Promise<string> {
+  try {
+    console.log(`[Info] Generating text with OpenAI GPT-4o-mini via Replicate...`);
+    
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: "openai/gpt-4o-mini",
+        input: {
+          prompt: prompt,
+          max_tokens: maxTokens,
+          temperature: 0.7,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Error] Replicate GPT-4o-mini API Error:', errorText);
+      throw new Error(`Replicate GPT-4o-mini request failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    
+    // Poll for completion
+    let pollResult = result;
+    while (pollResult.status !== 'succeeded' && pollResult.status !== 'failed') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${pollResult.id}`, {
+        headers: {
+          'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        },
+      });
+      
+      if (!pollResponse.ok) {
+        throw new Error(`Polling failed: ${pollResponse.status}`);
+      }
+      
+      pollResult = await pollResponse.json();
+      
+      if (pollResult.status === 'failed') {
+        throw new Error(`Text generation failed: ${pollResult.error}`);
+      }
+    }
+    
+    const generatedText = pollResult.output;
+    console.log('[Info] Text generated successfully with OpenAI via Replicate');
+    
+    return generatedText;
+  } catch (error) {
+    console.error('[Error] Text generation failed:', error);
+    throw error;
+  }
+}
+
+async function generateAdCopy(
+  prompt: string, 
+  tone: string, 
+  targetAudience: string, 
+  productService: string,
+  brandSettings?: any,
+  icpData?: any,
+  strategyData?: any
+): Promise<any> {
+  // Extract comprehensive brand data
+  const brandName = brandSettings?.brandName || 'Your Business';
+  const brandDescription = brandSettings?.description || productService;
+  const brandIndustry = brandSettings?.industry || 'business';
+  const brandKeywords = brandSettings?.keywords?.join(', ') || '';
+  const brandColors = `${brandSettings?.primaryColor || ''} ${brandSettings?.secondaryColor || ''}`.trim();
+  
+  // Extract comprehensive ICP data
+  const demographics = icpData?.demographics || {};
+  const psychographics = icpData?.psychographics || {};
+  const professionalInfo = icpData?.professionalInfo || {};
+  const painPoints = icpData?.painPoints?.join(', ') || 'business challenges';
+  const goals = icpData?.goals?.join(', ') || 'growth and success';
+  const preferredChannels = icpData?.preferredChannels?.join(', ') || '';
+  const buyingBehavior = icpData?.buyingBehavior || '';
+  
+  // Extract strategy context
+  const campaignObjectives = strategyData?.campaignRecommendations?.map((c: any) => c.objective).join(', ') || '';
+  const keyMessages = strategyData?.campaignRecommendations?.flatMap((c: any) => c.keyMessages || []).join(', ') || '';
+  const contentThemes = strategyData?.contentStrategy?.themes?.join(', ') || '';
+  
+  const adCopyPrompt = `You are a world-class marketing copywriter creating high-converting ad copy for ${brandName}.
+
+MARKETING STRATEGY INTELLIGENCE:
+${strategyData?.campaignRecommendations?.map((campaign: any, index: number) => `
+Campaign ${index + 1}: "${campaign.name}"
+- Platform: ${campaign.platform}
+- Objective: ${campaign.objective}
+- Key Messages: ${campaign.keyMessages?.join(' • ') || 'N/A'}
+- Target Audience: ${campaign.audience}
+`).join('') || 'No specific campaigns defined'}
+
+Content Strategy:
+- Themes: ${contentThemes}
+- Tone: ${strategyData?.contentStrategy?.tone || tone}
+- Content Types: ${strategyData?.contentStrategy?.contentTypes?.join(', ') || 'N/A'}
+
+BRAND POSITIONING:
+${brandName} is a ${brandIndustry} company that ${brandDescription}
+Key differentiators: ${brandKeywords}
+
+TARGET CUSTOMER PSYCHOLOGY:
+- WHO: ${professionalInfo.jobTitle || targetAudience} at ${professionalInfo.companySize || 'companies'}
+- PAIN: ${painPoints}
+- DESIRE: ${goals}
+- BUYING BEHAVIOR: ${buyingBehavior}
+
+COPYWRITING BRIEF:
+Write marketing copy that follows these proven advertising principles:
+1. HOOK with emotional pain/desire (not features)
+2. AGITATE the problem they're experiencing daily
+3. POSITION your solution as the bridge to their desired outcome
+4. Use POWER WORDS that trigger action
+5. Create URGENCY without being pushy
+6. Match the MARKETING STRATEGY messaging exactly
+
+COPY REQUIREMENTS:
+- Headline: Emotional hook that makes them stop scrolling (25-30 chars)
+- Description: Benefit-focused copy that connects pain to solution (80-90 chars)
+- CTA: Action-oriented with implied benefit (15-20 chars)
+
+Use the marketing strategy's key messages: "${keyMessages}"
+Incorporate these content themes: "${contentThemes}"
+
+Write like a direct response marketer, not a corporate brochure. Make it COMPELLING and CONVERSION-FOCUSED.
+
+Generate ONLY a JSON response:
+{
+  "headline": "Emotional hook headline here",
+  "description": "Benefit-focused description that connects pain to solution",
+  "cta": "Action CTA with benefit"
+}`;
+
+  try {
+    console.log('[Info] Generating ad copy with OpenAI...');
+    
+    const rawResponse = await generateText(adCopyPrompt, 500);
+    
+    // Clean up the response to extract JSON
+    let cleanResponse = rawResponse.trim();
+    
+    // Remove any markdown code blocks
+    cleanResponse = cleanResponse.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+    
+    // Find JSON object
+    const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanResponse = jsonMatch[0];
+    }
+    
+    console.log('[Info] Parsing ad copy response:', cleanResponse);
+    
+    const adCopy = JSON.parse(cleanResponse);
+    
+    // Validate required fields
+    if (!adCopy.headline || !adCopy.description || !adCopy.cta) {
+      throw new Error('Generated ad copy missing required fields');
+    }
+    
+    console.log('[Info] Ad copy generated successfully:', adCopy);
+    return adCopy;
+    
+  } catch (error) {
+    console.error('[Error] Failed to generate ad copy:', error);
+    
+    // Create compelling marketing fallback using available data
+    const painPoint = painPoints.split(',')[0]?.trim() || 'business challenges';
+    const goal = goals.split(',')[0]?.trim() || 'growth';
+    
+    const fallbackCopy = {
+      headline: `Stop ${painPoint.toLowerCase()}`,
+      description: `${brandName} helps ${professionalInfo.jobTitle || targetAudience}s achieve ${goal.toLowerCase()} faster`,
+      cta: `Get Results Now`
+    };
+    
+    console.log('[Info] Using personalized fallback ad copy:', fallbackCopy);
+    return fallbackCopy;
+  }
+}
+
+async function generateImage(
+  imagePrompt: string,
+  format: AdFormat,
+  headline: string,
+  description: string,
+  cta: string
+): Promise<string> {
+  try {
+    console.log('[Info] Generating image with Ideogram v2 via Replicate...');
+    
+    // Map our ad format dimensions to Ideogram v2 supported aspect ratios
+    const ideogramAspectRatioMapping: Record<string, string> = {
+      '300x250': '4:3',      // Medium Rectangle (300x250) -> closest landscape ratio
+      '336x280': '4:3',      // Large Rectangle (336x280) -> closest landscape ratio  
+      '160x600': '2:3',      // Wide Skyscraper (160x600) -> tall ratio
+      '1200x628': '16:9',    // Facebook Feed -> wide
+      '1080x1920': '9:16',   // Story Ad -> tall
+      '1080x1080': '1:1',    // Square -> exact match
+      '1200x627': '16:9',    // LinkedIn -> wide
+      '1200x1200': '1:1'     // LinkedIn Square -> exact match
+    };
+    
+    const originalSize = `${format.width}x${format.height}`;
+    const aspectRatio = ideogramAspectRatioMapping[originalSize] || '1:1';
+    
+    console.log('[Info] Replicate Ideogram v2 request details:', {
+      originalSize: originalSize,
+      mappedAspectRatio: aspectRatio,
+      promptLength: imagePrompt.length,
+      prompt: imagePrompt.substring(0, 200) + '...'
+    });
+
+    const requestBody = {
+      version: "ideogram-ai/ideogram-v2a",
+      input: {
+        prompt: imagePrompt,
+        aspect_ratio: aspectRatio,
+        model: "V_2",
+        magic_prompt_option: "Auto",
+        seed: Math.floor(Math.random() * 1000000),
+        style_type: "Auto"
+      }
+    };
+    
+    console.log('[Info] Full request body:', JSON.stringify(requestBody, null, 2));
+
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('[Info] Replicate API Response:', { status: response.status, statusText: response.statusText });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Error] Replicate Ideogram v2 API Error:', errorText);
+      throw new Error(`Replicate Ideogram v2 request failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const prediction = await response.json();
+    console.log('[Info] Ideogram v2 prediction started:', prediction.id);
+
+    // Poll for completion
+    let result = prediction;
+    let attempts = 0;
+    const maxAttempts = 60; // 60 seconds max wait for Ideogram v2
+
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+      console.log(`[Info] Ideogram v2 generation status: ${result.status} (attempt ${attempts + 1}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+        headers: {
+          'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+        },
+      });
+      
+      if (pollResponse.ok) {
+        result = await pollResponse.json();
+      }
+      attempts++;
+    }
+
+    if (result.status === 'failed') {
+      console.error('[Error] Ideogram v2 generation failed:', result.error);
+      throw new Error(`Image generation failed: ${result.error}`);
+    }
+    
+    if (result.status !== 'succeeded') {
+      console.error('[Error] Ideogram v2 generation timed out');
+      throw new Error('Image generation timed out after 60 seconds');
+    }
+
+    const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+    console.log('[Info] Image generated successfully:', imageUrl);
+    
+    // Add cache-busting timestamp to force fresh images
+    const cacheBustUrl = `${imageUrl}?t=${Date.now()}`;
+    return cacheBustUrl;
+  } catch (error) {
+    console.error('[Error] Image generation failed:', error);
+    throw error;
+  }
+}
+
+async function generateAdCopyAndImage(
+  prompt: string,
+  tone: string,
+  targetAudience: string,
+  productService: string,
+  format: AdFormat,
+  visualStyle: string = 'premium-tech',
+  brandColors?: string,
+  icpData?: any,
+  brandSettings?: any,
+  strategyData?: any
+): Promise<any> {
+  console.log(`[Info] Generating creative for ${format.name} (${format.width}x${format.height})`);
+  
+  // Generate ad copy first with brand, ICP, and strategy context
+  const adCopy = await generateAdCopy(prompt, tone, targetAudience, productService, brandSettings, icpData, strategyData);
+  
+  // Extract dynamic values for the prompt template
+  const selectedStyle = visualStyle.replace('-', ' '); // Convert "premium-tech" to "premium tech"
+  
+  // Transform business description into visual concepts using brand context
+  const businessDescription = brandSettings?.description || productService || 'innovative business solution';
+  const brandIndustry = brandSettings?.industry || 'business';
+  const brandKeywords = brandSettings?.keywords?.join(' ') || '';
+  const icpJobTitle = icpData?.professionalInfo?.jobTitle || targetAudience;
+  
+  const visualConcepts = await generateVisualConcepts(
+    `${businessDescription} in ${brandIndustry} industry, keywords: ${brandKeywords}`, 
+    icpJobTitle
+  );
+  
+  const targetICP = targetAudience || 'business professionals';
+  const colors = brandColors || 'modern professional colors';
+  
+  // Style-specific visual elements
+  const styleElements = {
+    'premium-tech': 'sleek geometric forms, gradient overlays, and futuristic elements',
+    'lifestyle-realistic': 'authentic scenes, natural lighting, and real-world environments', 
+    'minimalist-abstract': 'abstract shapes, clean lines, and geometric forms',
+    'illustration-modern': 'illustrated elements, creative graphics, and artistic compositions',
+    'corporate-professional': 'professional settings, business imagery, and clean layouts',
+    'creative-artistic': 'artistic textures, creative compositions, and expressive elements',
+    'retro-vintage': 'vintage textures, retro patterns, and nostalgic design elements',
+    'bold-energetic': 'dynamic movement, vibrant energy, and powerful visual impact'
+  };
+
+  const selectedElements = styleElements[visualStyle as keyof typeof styleElements] || styleElements['premium-tech'];
+
+  // Use the visual concepts instead of raw business description to avoid text generation
+  const contextualPrompt = `${selectedStyle} style ad image featuring ${visualConcepts}, designed to visually appeal to ${targetICP}. The composition should use a vibrant and cohesive palette of ${colors}, with ${selectedElements}, and engaging visual flow. The image should feel modern and high-quality. 
+
+ABSOLUTELY CRITICAL - TEXT-FREE REQUIREMENT: This image must be completely TEXT-FREE with NO TEXT, NO WORDS, NO LETTERS, NO TYPOGRAPHY, NO WRITING, NO LABELS, NO SIGNS, NO NUMBERS, NO SYMBOLS, NO CHARACTERS of any kind anywhere in this image. Do not include any readable text, company names, slogans, or written content. Only pure visual elements like shapes, colors, objects, people, scenes, and abstract representations. Any suggestion of text will make this image unusable.`;
+  
+  console.log(`[Info] Prompt template variables:`, {
+    visualStyle,
+    selectedStyle,
+    visualConcepts,
+    targetICP,
+    colors
+  });
+  console.log(`[Info] Full contextual prompt:`, contextualPrompt);
+
+  // Generate image
+  const imageUrl = await generateImage(contextualPrompt, format, adCopy.headline, adCopy.description, adCopy.cta);
+  
+  const result = {
+    format: format.name,
+    dimensions: `${format.width}x${format.height}`,
+    headline: adCopy.headline,
+    description: adCopy.description,
+    call_to_action: adCopy.cta,
+    image_url: imageUrl,
+    aspectRatio: format.aspectRatio
+  };
+  
+  console.log(`[Info] Creative result for ${format.name}:`, {
+    format: result.format,
+    dimensions: result.dimensions,
+    aspectRatio: result.aspectRatio
+  });
+  
+  return result;
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const { 
+      prompt, 
+      platforms, 
+      tone, 
+      targetAudience, 
+      productService, 
+      visualStyle = 'premium-tech',
+      brandSettings,
+      icpInsights,
+      campaignContext
+    } = await req.json()
+    
+    console.log('[Info] Edge Function - Received request for platforms:', platforms);
+    console.log('[Info] Visual style selected:', visualStyle);
+    console.log('[Info] Visual style type:', typeof visualStyle);
+    console.log('[Info] Brand settings:', brandSettings);
+    console.log('[Info] ICP insights available:', !!icpInsights);
+    console.log('[Info] Strategy context available:', !!campaignContext);
+    
+    // Extract brand colors from brandSettings
+    const brandColors = brandSettings ? 
+      `${brandSettings.primaryColor || ''} ${brandSettings.secondaryColor || ''}`.trim() : 
+      undefined;
+    
+    // Use icpInsights as icpData and campaignContext as strategyData
+    const icpData = icpInsights;
+    const strategyData = campaignContext;
+    
+    if (!REPLICATE_API_TOKEN) {
+      throw new Error('REPLICATE_API_TOKEN environment variable is required');
+    }
+
+    const results: any[] = [];
+    const errors: string[] = [];
+
+    // Process each platform sequentially to avoid rate limits
+    for (const platformName of platforms) {
+      const config = platformConfigs[platformName.toLowerCase()];
+      if (!config) {
+        console.error(`[Error] Unknown platform: ${platformName}`);
+        errors.push(`Unknown platform: ${platformName}`);
+        continue;
+      }
+
+      console.log(`[Info] Starting generation for ${platformName}`);
+
+      try {
+        // Process each format for this platform
+        for (const format of config.formats) {
+          console.log(`[Info] Starting generation for ${platformName} - ${format.name}`);
+          
+          const creative = await retryWithBackoff(
+            () => generateAdCopyAndImage(prompt, tone, targetAudience, productService, format, visualStyle, brandColors, icpData, brandSettings, strategyData),
+            3,
+            2000
+          );
+          
+          results.push({
+            platform: platformName,
+            ...creative
+          });
+          
+          console.log(`[Info] Successfully generated creative for ${platformName} - ${format.name}`);
+          
+          // Small delay between formats to be respectful to API
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        const errorMessage = `Failed to generate creative for ${platformName}: ${error.message}`;
+        console.error(`[Error] ${errorMessage}`);
+        errors.push(errorMessage);
+      }
+    }
+
+    console.log(`[Info] All creative generations completed. Success: ${results.length}, Errors: ${errors.length}`);
+
+    if (results.length === 0) {
+      console.error('[Error] All creative generations failed');
+      throw new Error(`All creative generations failed: ${errors.join('; ')}`);
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        creatives: results,
+        errors: errors.length > 0 ? errors : undefined
+      }),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
+
+  } catch (error) {
+    console.error('[Error] Edge Function error:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message,
+        details: error.toString()
+      }),
+      { 
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
+  }
+})

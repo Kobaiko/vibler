@@ -1,29 +1,16 @@
-import OpenAI from 'openai'
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
-export interface OpenAIConfig {
+export interface ReplicateConfig {
   model: string
   temperature: number
   maxTokens: number
-  topP: number
-  frequencyPenalty: number
-  presencePenalty: number
 }
 
-export const defaultConfig: OpenAIConfig = {
-  model: 'gpt-4o',
+export const defaultConfig: ReplicateConfig = {
+  model: 'openai/gpt-4o-mini',
   temperature: 0.7,
   maxTokens: 4000,
-  topP: 1,
-  frequencyPenalty: 0,
-  presencePenalty: 0,
 }
 
-export interface OpenAIResponse<T> {
+export interface ReplicateResponse<T> {
   data: T | null
   success: boolean
   error?: string
@@ -34,82 +21,133 @@ export interface OpenAIResponse<T> {
   }
 }
 
-export class OpenAIError extends Error {
+export class ReplicateError extends Error {
   constructor(
     message: string,
     public code?: string,
     public status?: number
   ) {
     super(message)
-    this.name = 'OpenAIError'
+    this.name = 'ReplicateError'
   }
 }
 
-export async function callOpenAI<T>(
-  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-  config: Partial<OpenAIConfig> = {},
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+export async function callReplicate<T>(
+  messages: ChatMessage[],
+  config: Partial<ReplicateConfig> = {},
   schema?: any
-): Promise<OpenAIResponse<T>> {
+): Promise<ReplicateResponse<T>> {
   try {
-    const finalConfig = { ...defaultConfig, ...config }
-    
-    const requestParams: OpenAI.Chat.Completions.ChatCompletionCreateParams = {
-      model: finalConfig.model,
-      messages,
-      temperature: finalConfig.temperature,
-      max_tokens: finalConfig.maxTokens,
-      top_p: finalConfig.topP,
-      frequency_penalty: finalConfig.frequencyPenalty,
-      presence_penalty: finalConfig.presencePenalty,
+    const apiKey = process.env.REPLICATE_API_TOKEN
+    if (!apiKey) {
+      throw new ReplicateError(
+        'Replicate API key is not configured. Please set the REPLICATE_API_TOKEN environment variable.',
+        'MISSING_API_KEY',
+        401
+      )
     }
 
-    // Add structured output if schema is provided
-    if (schema) {
-      requestParams.response_format = {
-        type: 'json_schema',
-        json_schema: {
-          name: 'funnel_response',
-          schema,
-          strict: true,
+    const finalConfig = { ...defaultConfig, ...config }
+    
+    // Convert messages to a single prompt
+    const prompt = messages.map(msg => {
+      if (msg.role === 'system') {
+        return `System: ${msg.content}`
+      } else if (msg.role === 'user') {
+        return `User: ${msg.content}`
+      } else {
+        return `Assistant: ${msg.content}`
+      }
+    }).join('\n\n')
+
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: finalConfig.model,
+        input: {
+          prompt: prompt,
+          max_tokens: finalConfig.maxTokens,
+          temperature: finalConfig.temperature,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new ReplicateError(`Replicate request failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    
+    // Poll for completion
+    let pollResult = result;
+    while (pollResult.status !== 'succeeded' && pollResult.status !== 'failed') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${pollResult.id}`, {
+        headers: {
+          'Authorization': `Token ${apiKey}`,
         },
+      });
+      
+      if (!pollResponse.ok) {
+        throw new ReplicateError(`Polling failed: ${pollResponse.status}`);
+      }
+      
+      pollResult = await pollResponse.json();
+      
+      if (pollResult.status === 'failed') {
+        throw new ReplicateError(`Generation failed: ${pollResult.error}`);
       }
     }
 
-    const completion = await openai.chat.completions.create(requestParams)
-    
-    const message = completion.choices[0]?.message
-    if (!message?.content) {
-      throw new OpenAIError('No content in response')
+    const content = pollResult.output;
+    if (!content) {
+      throw new ReplicateError('No content in response')
     }
 
     let data: T
     try {
-      data = JSON.parse(message.content) as T
+      // Handle array output from Replicate (join to string)
+      let rawContent = Array.isArray(content) ? content.join('') : content;
+      if (typeof rawContent !== 'string') {
+        rawContent = String(rawContent);
+      }
+      
+      // Clean the response content to handle markdown formatting
+      let cleanContent = rawContent.trim()
+      
+      // Remove markdown code blocks if present
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+      
+      data = JSON.parse(cleanContent) as T
     } catch (parseError) {
-      throw new OpenAIError(`Failed to parse JSON response: ${parseError}`)
+      console.error('Failed to parse JSON response:', parseError)
+      console.error('Raw content:', content)
+      throw new ReplicateError(`Failed to parse JSON response: ${parseError}`)
     }
 
     return {
       data,
       success: true,
-      usage: completion.usage ? {
-        promptTokens: completion.usage.prompt_tokens,
-        completionTokens: completion.usage.completion_tokens,
-        totalTokens: completion.usage.total_tokens,
-      } : undefined,
     }
   } catch (error) {
-    console.error('OpenAI API Error:', error)
+    console.error('Replicate API Error:', error)
     
-    if (error instanceof OpenAI.APIError) {
-      return {
-        data: null,
-        success: false,
-        error: `OpenAI API Error: ${error.message}`,
-      }
-    }
-    
-    if (error instanceof OpenAIError) {
+    if (error instanceof ReplicateError) {
       return {
         data: null,
         success: false,
@@ -126,7 +164,13 @@ export async function callOpenAI<T>(
 }
 
 export function validateApiKey(): boolean {
-  return !!process.env.OPENAI_API_KEY
+  return !!process.env.REPLICATE_API_TOKEN
 }
 
-export { openai } 
+// For backward compatibility, export callReplicate as callOpenAI
+export const callOpenAI = callReplicate
+
+// Legacy OpenAI types for backward compatibility
+export interface OpenAIConfig extends ReplicateConfig {}
+export interface OpenAIResponse<T> extends ReplicateResponse<T> {}
+export const OpenAIError = ReplicateError 

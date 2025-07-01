@@ -16,6 +16,8 @@ export type CardContentProps = React.HTMLAttributes<HTMLDivElement>
 
 export type CardFooterProps = React.HTMLAttributes<HTMLDivElement>
 
+export type CardTitleProps = React.HTMLAttributes<HTMLHeadingElement>
+
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = 'default', padding = 'md', children, ...props }, ref) => {
     const baseStyles = 'rounded-xl transition-all duration-200'
@@ -78,6 +80,30 @@ const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
   }
 )
 
+const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+  ({ className, ...props }, ref) => {
+    return (
+      <h3
+        ref={ref}
+        className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+        {...props}
+      />
+    )
+  }
+)
+
+const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => {
+    return (
+      <p
+        ref={ref}
+        className={cn('text-sm text-muted-foreground', className)}
+        {...props}
+      />
+    )
+  }
+)
+
 const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
   ({ className, ...props }, ref) => {
     return (
@@ -104,7 +130,9 @@ const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
 
 Card.displayName = 'Card'
 CardHeader.displayName = 'CardHeader'
+CardTitle.displayName = 'CardTitle'
+CardDescription.displayName = 'CardDescription'
 CardContent.displayName = 'CardContent'
 CardFooter.displayName = 'CardFooter'
 
-export { Card, CardHeader, CardContent, CardFooter } 
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } 

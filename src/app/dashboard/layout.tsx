@@ -9,17 +9,15 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-secondary-50 flex">
+    <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <main 
         id="main-content"
-        className="flex-1 overflow-auto"
+        className="ml-64 min-h-screen"
         role="main"
         aria-label="Dashboard content"
       >
-        <div className="p-4 sm:p-6 lg:p-8">
-          {children}
-        </div>
+        {children}
       </main>
     </div>
   )

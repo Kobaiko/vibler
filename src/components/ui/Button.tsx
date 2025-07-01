@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { handleKeyboardNavigation, aria } from '@/lib/accessibility'
@@ -36,24 +38,24 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700
-        focus:ring-primary-500 disabled:bg-primary-300 shadow-md hover:shadow-lg
+        bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 active:from-pink-700 active:to-purple-800
+        focus:ring-purple-500 disabled:from-gray-300 disabled:to-gray-400 disabled:text-gray-600 shadow-md hover:shadow-lg
       `,
       secondary: `
-        bg-secondary-100 text-secondary-900 hover:bg-secondary-200 active:bg-secondary-300
-        focus:ring-secondary-500 disabled:bg-secondary-50 disabled:text-secondary-400
+        bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 active:bg-gray-100
+        focus:ring-gray-500 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200
       `,
       outline: `
-        border-2 border-primary-500 text-primary-500 hover:bg-primary-50 active:bg-primary-100
-        focus:ring-primary-500 disabled:border-primary-300 disabled:text-primary-300
+        border-2 border-purple-500 text-purple-600 hover:bg-purple-50 active:bg-purple-100
+        focus:ring-purple-500 disabled:border-gray-300 disabled:text-gray-400
       `,
       ghost: `
-        text-secondary-700 hover:bg-secondary-100 active:bg-secondary-200
-        focus:ring-secondary-500 disabled:text-secondary-400
+        text-gray-700 hover:bg-gray-100 active:bg-gray-200
+        focus:ring-gray-500 disabled:text-gray-400
       `,
       danger: `
-        bg-error-500 text-white hover:bg-error-600 active:bg-error-700
-        focus:ring-error-500 disabled:bg-error-300 shadow-md hover:shadow-lg
+        bg-red-500 text-white hover:bg-red-600 active:bg-red-700
+        focus:ring-red-500 disabled:bg-red-300 shadow-md hover:shadow-lg
       `,
     }
 
