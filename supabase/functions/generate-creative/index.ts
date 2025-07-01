@@ -603,7 +603,7 @@ Context:
 - Brand: ${brandSettings?.companyName || 'Business'}
 - Industry: ${brandSettings?.industry || 'General'}
 - Target: ${icpData?.demographics || 'Professionals'}
-- Pain Points: ${icpData?.painPoints?.join(', ') || 'Various challenges'}
+- Pain Points: ${Array.isArray(icpData?.painPoints) ? icpData.painPoints.join(', ') : 'Various challenges'}
 - Marketing Message: ${marketingPrompt}
 
 Requirements:
@@ -633,8 +633,8 @@ Generate ONLY the punchline text - no quotes, explanations, or additional text.`
     console.error('[Error] Failed to generate punchline, using fallback:', error);
     
     // Industry-specific fallback punchlines
-    const industry = brandSettings?.industry?.toLowerCase() || '';
-    const companyName = brandSettings?.companyName || '';
+    const industry = (brandSettings?.industry || brandSettings?.description || brandSettings?.brandName || '').toLowerCase();
+    const companyName = brandSettings?.companyName || brandSettings?.brandName || '';
     
     let fallbacks = [];
     
