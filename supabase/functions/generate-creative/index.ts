@@ -323,13 +323,13 @@ async function generateImage(
   cta?: string
 ): Promise<string> {
   try {
-    console.log('[Info] Generating image with Ideogram v2 via Replicate...');
+    console.log('[Info] Generating image with Google Imagen 4 Ultra via Replicate...');
     
-    // Map our ad format dimensions to Ideogram v2 supported aspect ratios
-    const ideogramAspectRatioMapping: Record<string, string> = {
-      '300x250': '4:3',      // Medium Rectangle (300x250) -> closest landscape ratio
-      '336x280': '4:3',      // Large Rectangle (336x280) -> closest landscape ratio  
-      '160x600': '2:3',      // Wide Skyscraper (160x600) -> tall ratio
+    // Map our ad format dimensions to Imagen 4 Ultra supported aspect ratios
+    const imagen4AspectRatioMapping: Record<string, string> = {
+      '300x250': '6:5',      // Medium Rectangle (300x250) -> closest aspect ratio
+      '336x280': '6:5',      // Large Rectangle (336x280) -> closest aspect ratio  
+      '160x600': '2:7',      // Wide Skyscraper (160x600) -> tall ratio
       '1200x628': '16:9',    // Facebook Feed -> wide
       '1080x1920': '9:16',   // Story Ad -> tall
       '1080x1080': '1:1',    // Square -> exact match
@@ -338,9 +338,9 @@ async function generateImage(
     };
     
     const originalSize = `${format.width}x${format.height}`;
-    const aspectRatio = ideogramAspectRatioMapping[originalSize] || '1:1';
+    const aspectRatio = imagen4AspectRatioMapping[originalSize] || '1:1';
     
-    console.log('[Info] Replicate Ideogram v2 request details:', {
+    console.log('[Info] Google Imagen 4 Ultra request details:', {
       originalSize: originalSize,
       mappedAspectRatio: aspectRatio,
       promptLength: imagePrompt.length,
@@ -348,14 +348,12 @@ async function generateImage(
     });
 
     const requestBody = {
-      version: "ideogram-ai/ideogram-v2a",
+      version: "google/imagen-4-ultra",
       input: {
         prompt: imagePrompt,
         aspect_ratio: aspectRatio,
-        model: "V_2",
-        magic_prompt_option: "Off",
-        seed: Math.floor(Math.random() * 1000000),
-        style_type: "Design"
+        safety_filter_level: "block_only_high",
+        output_format: "jpg"
       }
     };
     
@@ -374,20 +372,20 @@ async function generateImage(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Error] Replicate Ideogram v2 API Error:', errorText);
-      throw new Error(`Replicate Ideogram v2 request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      console.error('[Error] Google Imagen 4 Ultra API Error:', errorText);
+      throw new Error(`Google Imagen 4 Ultra request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const prediction = await response.json();
-    console.log('[Info] Ideogram v2 prediction started:', prediction.id);
+    console.log('[Info] Google Imagen 4 Ultra prediction started:', prediction.id);
 
     // Poll for completion
     let result = prediction;
     let attempts = 0;
-    const maxAttempts = 60; // 60 seconds max wait for Ideogram v2
+    const maxAttempts = 120; // 2 minutes max wait for Imagen 4 Ultra (higher quality takes longer)
 
     while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
-      console.log(`[Info] Ideogram v2 generation status: ${result.status} (attempt ${attempts + 1}/${maxAttempts})`);
+      console.log(`[Info] Imagen 4 Ultra generation status: ${result.status} (attempt ${attempts + 1}/${maxAttempts})`);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
@@ -403,16 +401,16 @@ async function generateImage(
     }
 
     if (result.status === 'failed') {
-      console.error('[Error] Ideogram v2 generation failed:', result.error);
+      console.error('[Error] Google Imagen 4 Ultra generation failed:', result.error);
       throw new Error(`Image generation failed: ${result.error}`);
     }
     
     if (result.status !== 'succeeded') {
-      console.error('[Error] Ideogram v2 generation timed out');
-      throw new Error('Image generation timed out after 60 seconds');
+      console.error('[Error] Google Imagen 4 Ultra generation timed out');
+      throw new Error('Image generation timed out after 2 minutes');
     }
 
-    const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+    const imageUrl = result.output; // Imagen 4 Ultra returns a single string URL
     console.log('[Info] Image generated successfully:', imageUrl);
     
     // Add cache-busting timestamp to force fresh images
@@ -467,39 +465,100 @@ async function generateAdCopyAndImage(
   console.log('[Color Debug] Brand colors used for image:', colors);
   console.log('[Color Debug] Original brand colors:', brandColors);
   
-  // Style-specific visual elements
-  const styleElements = {
-    'premium-tech': 'sleek geometric forms, gradient overlays, and futuristic elements',
-    'lifestyle-realistic': 'authentic scenes, natural lighting, and real-world environments', 
-    'minimalist-abstract': 'abstract shapes, clean lines, and geometric forms',
-    'illustration-modern': 'illustrated elements, creative graphics, and artistic compositions',
-    'corporate-professional': 'professional settings, business imagery, and clean layouts',
-    'creative-artistic': 'artistic textures, creative compositions, and expressive elements',
-    'retro-vintage': 'vintage textures, retro patterns, and nostalgic design elements',
-    'bold-energetic': 'dynamic movement, vibrant energy, and powerful visual impact'
+  // Style-specific visual elements and prompting
+  const styleConfig = {
+    'premium-tech': {
+      elements: 'sleek geometric forms, gradient overlays, and futuristic elements',
+      promptStyle: 'high-tech, modern design with clean lines and premium feel',
+      sceneType: 'abstract premium technology background'
+    },
+    'lifestyle-realistic': {
+      elements: 'authentic scenes, natural lighting, and real-world environments',
+      promptStyle: 'photorealistic lifestyle photography with real people using products in authentic settings',
+      sceneType: 'real people in natural environments using technology or products'
+    },
+    'minimalist-abstract': {
+      elements: 'abstract shapes, clean lines, and geometric forms',
+      promptStyle: 'minimalist design with clean abstract forms',
+      sceneType: 'clean abstract background with minimal elements'
+    },
+    'illustration-modern': {
+      elements: 'illustrated elements, creative graphics, and artistic compositions',
+      promptStyle: 'modern illustration style with creative graphic elements',
+      sceneType: 'illustrated scene with modern graphic design elements'
+    },
+    'corporate-professional': {
+      elements: 'professional settings, business imagery, and clean layouts',
+      promptStyle: 'professional corporate environment with business imagery',
+      sceneType: 'professional business setting with clean corporate aesthetic'
+    },
+    'creative-artistic': {
+      elements: 'artistic textures, creative compositions, and expressive elements',
+      promptStyle: 'artistic and creative composition with expressive visual elements',
+      sceneType: 'creative artistic background with expressive compositions'
+    },
+    'retro-vintage': {
+      elements: 'vintage textures, retro patterns, and nostalgic design elements',
+      promptStyle: 'retro vintage aesthetic with nostalgic design patterns',
+      sceneType: 'vintage-inspired background with retro design elements'
+    },
+    'bold-energetic': {
+      elements: 'dynamic movement, vibrant energy, and powerful visual impact',
+      promptStyle: 'bold energetic design with dynamic movement and vibrant colors',
+      sceneType: 'dynamic energetic background with powerful visual impact'
+    }
   };
 
-  const selectedElements = styleElements[visualStyle as keyof typeof styleElements] || styleElements['premium-tech'];
+  const currentStyleConfig = styleConfig[visualStyle as keyof typeof styleConfig] || styleConfig['premium-tech'];
 
-  // Create image prompt WITH the tagline embedded in the image using ACTUAL brand information
+  // Create image prompt that properly respects the visual style
   const brandName = brandSettings?.brandName || 'Business';
   const brandDescription = brandSettings?.description || productService;
   
-  const contextualPrompt = `Create a professional advertising background image for ${brandName}.
+  // Build a contextual prompt that varies significantly based on visual style
+  let contextualPrompt = '';
+  
+  if (visualStyle === 'lifestyle-realistic') {
+    // For lifestyle-realistic, create prompts with real people and authentic scenarios
+    const targetDemographic = icpData?.demographics || targetAudience || 'professionals';
+    contextualPrompt = `Create a ${currentStyleConfig.promptStyle} showing ${targetDemographic} authentically using ${brandDescription} in a real-world setting.
+
+PHOTOREALISTIC REQUIREMENTS:
+- Real people (not models) in natural, authentic poses
+- Natural lighting and realistic environments
+- Genuine interactions with technology or products
+- Professional but approachable aesthetic
+- Use brand colors: ${colors} as accent elements (not dominant)
+- Show "${finalTagline}" as clean, modern typography overlay
+- Authentic workplace or lifestyle environment
+- High-quality photography style with natural depth of field
+
+STRICT TEXT REQUIREMENTS:
+- Only show "${finalTagline}" as readable text
+- NO other text, labels, or written content
+- Clean, professional typography for the tagline only`;
+  } else {
+    // For other styles, use more abstract/design-focused approaches
+    contextualPrompt = `Create a professional advertising image with ${currentStyleConfig.promptStyle} for ${brandName}.
 
 VISUAL DESIGN:
+- ${currentStyleConfig.sceneType}
 - Use brand colors: ${colors}
 - Modern, clean aesthetic for ${brandIndustry} industry
 - Professional quality suitable for advertising
-- ${selectedStyle} design style
-- Abstract background with visual elements that support the brand
+- ${currentStyleConfig.elements}
 
-STRICT REQUIREMENTS:
+COMPOSITION REQUIREMENTS:
 - Show "${finalTagline}" prominently as the main text element
 - NO other text, bullet points, requirements, or descriptions
 - Clean, modern typography for the tagline
 - Focus on visual impact with tagline as the centerpiece
-- NO company names, additional text, or design specifications visible`;
+- NO company names, additional text, or design specifications visible
+- High-quality ${currentStyleConfig.promptStyle}`;
+  }
+
+  console.log(`[Image Generation] Using ${visualStyle} style with enhanced prompting`);
+  console.log(`[Image Generation] Style config:`, currentStyleConfig);
 
   console.log(`[Image Generation] Generating clean image`);
 

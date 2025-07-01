@@ -420,7 +420,7 @@ export default function CreativeGeneratorPage() {
                   AI Generating ${creative.platform} Image
                 </text>
                 <text x="50%" y="80%" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" opacity="0.9">
-                  Using Ideogram v2
+                  Using Google Imagen 4 Ultra
                 </text>
                 
                 <!-- Progress dots -->
