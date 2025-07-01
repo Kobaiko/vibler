@@ -531,18 +531,18 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
           
           switch (resizeHandle) {
             case 'top-left':
-              newLayer.x = Math.max(0, layer.x + deltaX)
-              newLayer.y = Math.max(0, layer.y + deltaY)
+              newLayer.x = Math.max(-50, layer.x + deltaX)
+              newLayer.y = Math.max(-50, layer.y + deltaY)
               newLayer.width = Math.max(5, layer.width - deltaX)
               newLayer.height = Math.max(5, layer.height - deltaY)
               break
             case 'top-right':
-              newLayer.y = Math.max(0, layer.y + deltaY)
+              newLayer.y = Math.max(-50, layer.y + deltaY)
               newLayer.width = Math.max(5, layer.width + deltaX)
               newLayer.height = Math.max(5, layer.height - deltaY)
               break
             case 'bottom-left':
-              newLayer.x = Math.max(0, layer.x + deltaX)
+              newLayer.x = Math.max(-50, layer.x + deltaX)
               newLayer.width = Math.max(5, layer.width - deltaX)
               newLayer.height = Math.max(5, layer.height + deltaY)
               break
@@ -552,9 +552,9 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
               break
           }
           
-          // Constrain to canvas bounds
-          if (newLayer.x + newLayer.width > 100) newLayer.width = 100 - newLayer.x
-          if (newLayer.y + newLayer.height > 100) newLayer.height = 100 - newLayer.y
+          // Allow movement beyond canvas bounds but keep some reasonable limits
+          if (newLayer.x + newLayer.width > 150) newLayer.width = 150 - newLayer.x
+          if (newLayer.y + newLayer.height > 150) newLayer.height = 150 - newLayer.y
           
           return newLayer
         }
@@ -563,9 +563,9 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
       
       setDragStart({ x: mouseX, y: mouseY })
     } else if (isDragging && selectedLayerId && dragOffset) {
-      // Handle dragging
-      const newX = Math.max(0, Math.min(100, mouseX - dragOffset.x))
-      const newY = Math.max(0, Math.min(100, mouseY - dragOffset.y))
+      // Handle dragging - allow negative positions for partial off-canvas placement
+      const newX = Math.max(-50, Math.min(150, mouseX - dragOffset.x))
+      const newY = Math.max(-50, Math.min(150, mouseY - dragOffset.y))
       
       setLayers(prev => prev.map(layer => 
         layer.id === selectedLayerId 
@@ -898,6 +898,7 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                 disabled={historyIndex <= 0}
                 variant="outline" 
                 size="sm"
+                className="text-sm px-3 py-2 h-auto"
               >
                 ↶ Undo
               </Button>
@@ -906,16 +907,17 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                 disabled={historyIndex >= history.length - 1}
                 variant="outline" 
                 size="sm"
+                className="text-sm px-3 py-2 h-auto"
               >
                 ↷ Redo
               </Button>
 
             </div>
             <div className="flex items-center gap-2">
-              <Button onClick={exportImage} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={exportImage} className="bg-green-600 hover:bg-green-700 text-sm px-4 py-2 h-auto">
                 Save Creative
               </Button>
-              <Button onClick={onCancel} variant="outline">
+              <Button onClick={onCancel} variant="outline" className="text-sm px-4 py-2 h-auto">
                 Cancel
               </Button>
             </div>
@@ -955,22 +957,22 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
           <div className="p-4 border-b bg-white">
             <h3 className="font-semibold mb-3">Add Elements</h3>
             <div className="grid grid-cols-2 gap-2">
-              <Button onClick={addTextLayer} variant="outline" size="sm">
+              <Button onClick={addTextLayer} variant="outline" size="sm" className="text-xs px-2 py-1 h-8 min-h-0">
                 📝 Add Text
               </Button>
-              <Button onClick={addButtonLayer} variant="outline" size="sm">
+              <Button onClick={addButtonLayer} variant="outline" size="sm" className="text-xs px-2 py-1 h-8 min-h-0">
                 🔘 Add Button
               </Button>
-              <Button onClick={addImageLayer} variant="outline" size="sm">
+              <Button onClick={addImageLayer} variant="outline" size="sm" className="text-xs px-2 py-1 h-8 min-h-0">
                 🖼️ Add Image
               </Button>
-              <Button onClick={addLogoLayer} variant="outline" size="sm" disabled={!brandSettings?.logoUrl}>
+              <Button onClick={addLogoLayer} variant="outline" size="sm" disabled={!brandSettings?.logoUrl} className="text-xs px-2 py-1 h-8 min-h-0">
                 🏢 Add Logo
               </Button>
-              <Button onClick={() => addShapeLayer('rectangle')} variant="outline" size="sm">
+              <Button onClick={() => addShapeLayer('rectangle')} variant="outline" size="sm" className="text-xs px-2 py-1 h-8 min-h-0">
                 ⬜ Rectangle
               </Button>
-              <Button onClick={() => addShapeLayer('circle')} variant="outline" size="sm">
+              <Button onClick={() => addShapeLayer('circle')} variant="outline" size="sm" className="text-xs px-2 py-1 h-8 min-h-0">
                 ⭕ Circle
               </Button>
             </div>
@@ -1113,8 +1115,8 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                                 <Label className="text-xs">X: {Math.round(layer.x)}%</Label>
                                 <input
                                   type="range"
-                                  min="0"
-                                  max="100"
+                                  min="-50"
+                                  max="150"
                                   value={layer.x}
                                   onChange={(e) => {
                                     const newLayers = layers.map(l => 
@@ -1129,8 +1131,8 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                                 <Label className="text-xs">Y: {Math.round(layer.y)}%</Label>
                                 <input
                                   type="range"
-                                  min="0"
-                                  max="100"
+                                  min="-50"
+                                  max="150"
                                   value={layer.y}
                                   onChange={(e) => {
                                     const newLayers = layers.map(l => 
@@ -1349,8 +1351,8 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                               <Label className="text-xs">X: {Math.round(layer.x)}%</Label>
                               <input
                                 type="range"
-                                min="0"
-                                max="100"
+                                min="-50"
+                                max="150"
                                 value={layer.x}
                                 onChange={(e) => {
                                   const newLayers = layers.map(l => 
@@ -1365,8 +1367,8 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                               <Label className="text-xs">Y: {Math.round(layer.y)}%</Label>
                               <input
                                 type="range"
-                                min="0"
-                                max="100"
+                                min="-50"
+                                max="150"
                                 value={layer.y}
                                 onChange={(e) => {
                                   const newLayers = layers.map(l => 
@@ -1490,8 +1492,8 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                     <Label className="text-xs">X: {Math.round(selectedLayer.x)}%</Label>
                     <input
                       type="range"
-                      min="0"
-                      max="100"
+                      min="-50"
+                      max="150"
                       value={selectedLayer.x}
                       onChange={(e) => {
                         const newLayers = layers.map(l => 
@@ -1507,8 +1509,8 @@ const LayeredAdEditor: React.FC<LayeredAdEditorProps> = ({ creative, brandSettin
                     <Label className="text-xs">Y: {Math.round(selectedLayer.y)}%</Label>
                     <input
                       type="range"
-                      min="0"
-                      max="100"
+                      min="-50"
+                      max="150"
                       value={selectedLayer.y}
                       onChange={(e) => {
                         const newLayers = layers.map(l => 
